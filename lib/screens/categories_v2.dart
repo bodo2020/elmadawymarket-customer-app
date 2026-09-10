@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/design.dart';
 import '../core/ui.dart';
-import 'catalog.dart';
+import 'product_v2.dart';
 
 class CategoriesV2Page extends StatelessWidget {
   const CategoriesV2Page({super.key});
@@ -139,7 +139,7 @@ class CategoryV2Page extends StatelessWidget {
                     action: FilledButton(
                       onPressed: () => open(
                         context,
-                        CatalogPage(
+                        CatalogV2Page(
                           title: '${category['name'] ?? 'منتجات القسم'}',
                           filters: {'p_main_category_id': category['id']},
                         ),
@@ -163,7 +163,7 @@ class CategoryV2Page extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: () => open(
                             context,
-                            CatalogPage(
+                            CatalogV2Page(
                               title: 'كل ${category['name'] ?? 'المنتجات'}',
                               filters: {
                                 'p_main_category_id': category['id'],
@@ -213,7 +213,7 @@ class _SubcategoryTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       onTap: () => open(
         context,
-        CatalogPage(
+        CatalogV2Page(
           title: name.isEmpty ? '${category['name']}' : name,
           filters: {'p_subcategory_id': subcategory['id']},
         ),
