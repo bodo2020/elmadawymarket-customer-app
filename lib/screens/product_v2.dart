@@ -1629,7 +1629,9 @@ class _CatalogV2PageState extends State<CatalogV2Page> {
       if (product.bulk) units.add((product: product, bulk: true));
     }
     units.removeWhere((unit) {
-      if (widget.bulkOnly && !unit.bulk) return true;
+      if (widget.bulkOnly && !unit.bulk) {
+        return true;
+      }
       if (onlyAvailable && unit.product.maxQuantity(unit.bulk) <= 0)
         return true;
       if (onlyOffers) {
@@ -1638,7 +1640,9 @@ class _CatalogV2PageState extends State<CatalogV2Page> {
         }
         final original = number(unit.product.data['price']);
         final offer = number(unit.product.data['offer_price']);
-        if (!(offer > 0 && offer < original)) return true;
+        if (!(offer > 0 && offer < original)) {
+          return true;
+        }
       }
       return false;
     });
