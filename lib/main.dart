@@ -7,7 +7,7 @@ import 'core/ui.dart';
 import 'core/design.dart';
 import 'screens/catalog.dart';
 import 'screens/auth.dart';
-import 'screens/account.dart';
+import 'screens/account_v2.dart';
 import 'screens/address.dart';
 import 'screens/home_v2.dart';
 import 'screens/cart_v2.dart';
@@ -183,7 +183,7 @@ class _HomeShellState extends State<HomeShell> {
                               0 => const StoreHomeV2(),
                               1 => const CategoriesPage(),
                               2 => const CartV2Page(),
-                              _ => const AccountPage(),
+                              _ => const AccountV2Page(),
                             },
                     ),
                   ],
