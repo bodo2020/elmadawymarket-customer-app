@@ -736,9 +736,7 @@ class _OrdersPageState extends State<OrdersPage> {
                 .where((e) => e['id'] == widget.orderId)
                 .firstOrNull;
             if (target != null) {
-              previous =
-                  target['source_channel'] == 'store' ||
-                  ['delivered', 'cancelled'].contains(target['status']);
+              previous = ['delivered', 'cancelled'].contains(target['status']);
             }
           }
           data = result;
@@ -864,7 +862,9 @@ class _OrderCard extends StatelessWidget {
     final items = normalizeOrderItems(order['items']);
     final delivered = status == 'delivered';
     final cancelled = status == 'cancelled';
-    final statusColor = cancelled
+    final statusColor = !online
+        ? MarketColors.primary
+        : cancelled
         ? MarketColors.error
         : delivered
         ? MarketColors.success
@@ -894,13 +894,30 @@ class _OrderCard extends StatelessWidget {
                         : MarketColors.primarySurface,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(
-                    online ? 'طلب أونلاين' : 'شراء من الفرع',
-                    style: TextStyle(
-                      color: online ? MarketColors.info : MarketColors.primary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        online
+                            ? Icons.local_shipping_outlined
+                            : Icons.storefront_outlined,
+                        color: online
+                            ? MarketColors.info
+                            : MarketColors.primary,
+                        size: 17,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        online ? 'طلب أونلاين' : 'شراء من الفرع',
+                        style: TextStyle(
+                          color: online
+                              ? MarketColors.info
+                              : MarketColors.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const Spacer(),
@@ -914,9 +931,12 @@ class _OrderCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            const Text(
-              'رقم الطلب',
-              style: TextStyle(fontSize: 11, color: MarketColors.textTertiary),
+            Text(
+              online ? 'رقم الطلب' : 'رقم الفاتورة',
+              style: const TextStyle(
+                fontSize: 11,
+                color: MarketColors.textTertiary,
+              ),
             ),
             SelectableText(
               '#$identifier',
@@ -939,7 +959,9 @@ class _OrderCard extends StatelessWidget {
               child: Row(
                 children: [
                   Icon(
-                    delivered
+                    !online
+                        ? Icons.storefront_outlined
+                        : delivered
                         ? Icons.check_circle_outline
                         : cancelled
                         ? Icons.cancel_outlined
@@ -952,14 +974,18 @@ class _OrderCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          statusLabels[status] ?? status,
+                          !online
+                              ? 'شراء من الفرع'
+                              : statusLabels[status] ?? status,
                           style: TextStyle(
                             color: statusColor,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                         Text(
-                          delivered
+                          !online
+                              ? 'تم تسجيل عملية الشراء ونقاطها في حسابك.'
+                              : delivered
                               ? 'تم توصيل طلبك بنجاح.'
                               : cancelled
                               ? 'تم إلغاء هذا الطلب.'
@@ -979,6 +1005,10 @@ class _OrderCard extends StatelessWidget {
                 Expanded(child: _OrderValue('عدد المنتجات', '${items.length}')),
               ],
             ),
+            if (items.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _OrderProductImages(items),
+            ],
             ExpansionTile(
               initiallyExpanded: initiallyExpanded,
               tilePadding: EdgeInsets.zero,
@@ -996,7 +1026,7 @@ class _OrderCard extends StatelessWidget {
                   ),
                 ...items.map(
                   (item) => ListTile(
-                    leading: _accountIcon(Icons.inventory_2_outlined),
+                    leading: _OrderProductImage(item, size: 52),
                     title: Text('${item['name'] ?? 'منتج'}'),
                     subtitle: Text('الكمية: ${item['quantity']}'),
                     trailing: Text(
@@ -1020,6 +1050,62 @@ class _OrderCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _OrderProductImages extends StatelessWidget {
+  final List<JsonMap> items;
+  const _OrderProductImages(this.items);
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 66,
+    child: ListView.separated(
+      scrollDirection: Axis.horizontal,
+      itemCount: items.length,
+      separatorBuilder: (_, _) => const SizedBox(width: 8),
+      itemBuilder: (_, index) => _OrderProductImage(items[index], size: 62),
+    ),
+  );
+}
+
+class _OrderProductImage extends StatelessWidget {
+  final JsonMap item;
+  final double size;
+  const _OrderProductImage(this.item, {required this.size});
+
+  String get imageUrl {
+    final product = item['product'] is Map
+        ? row(item['product'])
+        : item['products'] is Map
+        ? row(item['products'])
+        : <String, dynamic>{};
+    final direct =
+        item['image_url'] ??
+        item['product_image_url'] ??
+        item['thumbnail_url'] ??
+        item['image'] ??
+        product['image_url'];
+    if ('$direct'.trim().isNotEmpty && direct != null) return '$direct';
+    final images = item['image_urls'] ?? product['image_urls'];
+    if (images is List && images.isNotEmpty) return '${images.first}';
+    return '';
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    padding: const EdgeInsets.all(5),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(13),
+      border: Border.all(color: MarketColors.divider),
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(9),
+      child: photo(imageUrl, width: size - 10, height: size - 10),
+    ),
+  );
 }
 
 class _OrderValue extends StatelessWidget {
