@@ -1,0 +1,46 @@
+name: One-time Fix Checkout Orders V2
+
+on:
+  push:
+    branches:
+      - work/sync-current-customer-20260910
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/sync-current-customer-20260910
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.8'
+          channel: stable
+          cache: true
+      - name: Fix V2 lint
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('lib/screens/orders_v2.dart')
+          text = p.read_text()
+          old = """            icon: Icons.shopping_bag_outlined,\n            actionLabel: previous ? null : 'تسوق الآن',\n            onAction: previous ? null : () => openShellTab(context, 0),\n"""
+          new = """            icon: Icons.shopping_bag_outlined,\n            action: previous\n                ? null\n                : FilledButton(\n                    onPressed: () => openShellTab(context, 0),\n                    child: const Text('تسوق الآن'),\n                  ),\n"""
+          if old not in text:
+              raise SystemExit('orders empty-state pattern not found')
+          p.write_text(text.replace(old, new, 1))
+          PY
+          dart fix --apply lib/screens/checkout_v2.dart lib/screens/orders_v2.dart
+          dart format lib/screens/checkout_v2.dart lib/screens/orders_v2.dart
+      - name: Commit fixes
+        shell: bash
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "bodo2020"
+          git config user.email "bodo2020@users.noreply.github.com"
+          git add lib/screens/checkout_v2.dart lib/screens/orders_v2.dart
+          git commit -m "fix: clean checkout and orders v2 analysis"
+          git push origin HEAD:work/sync-current-customer-20260910
