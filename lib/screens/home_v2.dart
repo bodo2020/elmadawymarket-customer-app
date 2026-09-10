@@ -6,6 +6,7 @@ import '../core/design.dart';
 import '../core/ui.dart';
 import 'address.dart';
 import 'catalog.dart';
+import 'categories_v2.dart';
 
 class StoreHomeV2 extends StatelessWidget {
   const StoreHomeV2({super.key});
@@ -276,7 +277,7 @@ class _CategorySection extends StatelessWidget {
   Widget _allButton(BuildContext context) => TextButton.icon(
         onPressed: () => open(
           context,
-          const PageFrame('الأقسام', CategoriesPage()),
+          const PageFrame('الأقسام', CategoriesV2Page()),
         ),
         iconAlignment: IconAlignment.end,
         icon: const Icon(Icons.chevron_left_rounded, size: 18),
@@ -336,7 +337,8 @@ class _CategorySection extends StatelessWidget {
                     crossAxisSpacing: 10,
                     childAspectRatio: .76,
                   ),
-                  itemBuilder: (_, i) => HomeCategory(cats[i]),
+                  itemBuilder: (_, i) =>
+                      CustomerCategoryTile(cats[i], compact: true),
                 );
               }
               return SizedBox(
@@ -352,7 +354,7 @@ class _CategorySection extends StatelessWidget {
                     width: 98 +
                         (MediaQuery.textScalerOf(context).scale(12) - 12)
                             .clamp(0, 16),
-                    child: HomeCategory(cats[i]),
+                    child: CustomerCategoryTile(cats[i], compact: true),
                   ),
                 ),
               );
