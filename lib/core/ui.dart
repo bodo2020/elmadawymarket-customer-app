@@ -7,40 +7,47 @@ export 'store.dart';
 
 late MarketStore market;
 final ValueNotifier<int> shellTabIndex = ValueNotifier<int>(0);
+Widget Function(BuildContext context)? notificationsPageBuilder;
 
 void openShellTab(BuildContext context, int index) {
   shellTabIndex.value = index;
   Navigator.of(context).popUntil((route) => route.isFirst);
 }
 
-Future<T?> open<T>(BuildContext context, Widget page) =>
-    Navigator.of(context).push<T>(
-      PageRouteBuilder<T>(
-        pageBuilder: (_, animation, secondaryAnimation) => page,
-        transitionDuration: MediaQuery.disableAnimationsOf(context)
-            ? Duration.zero
-            : const Duration(milliseconds: 220),
-        reverseTransitionDuration: MediaQuery.disableAnimationsOf(context)
-            ? Duration.zero
-            : const Duration(milliseconds: 200),
-        transitionsBuilder: (_, animation, secondaryAnimation, child) {
-          final eased = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          );
-          return FadeTransition(
-            opacity: eased,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(-.025, .015),
-                end: Offset.zero,
-              ).animate(eased),
-              child: child,
-            ),
-          );
-        },
-      ),
-    );
+Future<T?> open<T>(BuildContext context, Widget page) {
+  final resolvedPage = page.runtimeType.toString() == 'NotificationsPage' &&
+          notificationsPageBuilder != null
+      ? notificationsPageBuilder!(context)
+      : page;
+  return Navigator.of(context).push<T>(
+    PageRouteBuilder<T>(
+      pageBuilder: (_, animation, secondaryAnimation) => resolvedPage,
+      transitionDuration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 220),
+      reverseTransitionDuration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 200),
+      transitionsBuilder: (_, animation, secondaryAnimation, child) {
+        final eased = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
+        return FadeTransition(
+          opacity: eased,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(-.025, .015),
+              end: Offset.zero,
+            ).animate(eased),
+            child: child,
+          ),
+        );
+      },
+    ),
+  );
+}
+
 void message(BuildContext context, String text) {
   if (context.mounted) {
     final messenger = ScaffoldMessenger.of(context);
