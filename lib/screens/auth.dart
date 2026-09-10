@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/design.dart';
 import '../core/ui.dart';
-import 'address.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -57,8 +56,12 @@ class _AuthPageState extends State<AuthPage> {
   bool _validPhone() {
     var digits = _normalizeDigits(phone.text).replaceAll(RegExp(r'\D'), '');
     final dialDigits = countries[country]!.dial.replaceAll(RegExp(r'\D'), '');
-    if (digits.startsWith(dialDigits)) digits = digits.substring(dialDigits.length);
-    if (country == 'EG' && digits.startsWith('0')) digits = digits.substring(1);
+    if (digits.startsWith(dialDigits)) {
+      digits = digits.substring(dialDigits.length);
+    }
+    if (country == 'EG' && digits.startsWith('0')) {
+      digits = digits.substring(1);
+    }
 
     if (digits.isEmpty) {
       message(context, 'اكتب رقم الموبايل');
@@ -75,7 +78,9 @@ class _AuthPageState extends State<AuthPage> {
     timer?.cancel();
     setState(() => resendSeconds = 60);
     timer = Timer.periodic(const Duration(seconds: 1), (value) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       if (resendSeconds <= 1) {
         value.cancel();
         setState(() => resendSeconds = 0);
@@ -86,7 +91,9 @@ class _AuthPageState extends State<AuthPage> {
   }
 
   Future<void> _sendOtp({bool resend = false}) async {
-    if (busy || (resend && resendSeconds > 0) || !_validPhone()) return;
+    if (busy || (resend && resendSeconds > 0) || !_validPhone()) {
+      return;
+    }
     setState(() => busy = true);
     try {
       await market.db.auth.signInWithOtp(
@@ -94,7 +101,9 @@ class _AuthPageState extends State<AuthPage> {
         shouldCreateUser: true,
         channel: OtpChannel.sms,
       );
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       code.clear();
       setState(() => sent = true);
       _startTimer();
@@ -103,10 +112,14 @@ class _AuthPageState extends State<AuthPage> {
         resend ? 'تم إعادة إرسال رمز التحقق' : 'تم إرسال رمز التحقق',
       );
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) codeFocus.requestFocus();
+        if (mounted) {
+          codeFocus.requestFocus();
+        }
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       final text = '$error';
       message(
         context,
@@ -115,12 +128,16 @@ class _AuthPageState extends State<AuthPage> {
             : friendlyError(error),
       );
     } finally {
-      if (mounted) setState(() => busy = false);
+      if (mounted) {
+        setState(() => busy = false);
+      }
     }
   }
 
   Future<void> _verify() async {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     final otp = _normalizeDigits(code.text).replaceAll(RegExp(r'\D'), '');
     if (otp.length != 6) {
       message(context, 'اكتب رمز التحقق المكون من 6 أرقام');
@@ -133,9 +150,13 @@ class _AuthPageState extends State<AuthPage> {
         token: otp,
         type: OtpType.sms,
       );
-      if (response.user == null) throw StateError('AUTH_REQUIRED');
+      if (response.user == null) {
+        throw StateError('AUTH_REQUIRED');
+      }
       await market.load();
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       final profileName = '${market.profile?['name'] ?? ''}'.trim();
       if (market.profile == null || profileName.length < 2) {
@@ -145,18 +166,18 @@ class _AuthPageState extends State<AuthPage> {
         return;
       }
       if (market.address == null) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => const AddressPage(requiredAddress: true),
-          ),
-        );
+        openShellTab(context, 0);
         return;
       }
       Navigator.of(context).pop(true);
     } catch (error) {
-      if (mounted) message(context, friendlyError(error));
+      if (mounted) {
+        message(context, friendlyError(error));
+      }
     } finally {
-      if (mounted) setState(() => busy = false);
+      if (mounted) {
+        setState(() => busy = false);
+      }
     }
   }
 
@@ -276,7 +297,9 @@ class _AuthPageState extends State<AuthPage> {
                               onSubmitted: (_) => _sendOtp(),
                               decoration: InputDecoration(
                                 labelText: 'رقم الموبايل',
-                                hintText: country == 'EG' ? '01012345678' : 'رقم الهاتف',
+                                hintText: country == 'EG'
+                                    ? '01012345678'
+                                    : 'رقم الهاتف',
                                 prefixIcon: const Icon(Icons.phone_outlined),
                               ),
                             );
@@ -387,7 +410,9 @@ class _OtpFieldState extends State<_OtpField> {
   }
 
   void _changed() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -412,7 +437,9 @@ class _OtpFieldState extends State<_OtpField> {
           maxLength: 6,
           autofillHints: const [AutofillHints.oneTimeCode],
           onSubmitted: (_) {
-            if (value.length == 6) widget.onCompleted();
+            if (value.length == 6) {
+              widget.onCompleted();
+            }
           },
           decoration: const InputDecoration(
             hintText: '●  ●  ●  ●  ●  ●',
@@ -484,7 +511,9 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
     final user = market.user;
-    if (user == null || user.phone == null) throw StateError('AUTH_REQUIRED');
+    if (user == null || user.phone == null) {
+      throw StateError('AUTH_REQUIRED');
+    }
     final parts = fullName.split(' ');
     final firstName = parts.first;
     final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : null;
@@ -500,14 +529,12 @@ class _ProfilePageState extends State<ProfilePage> {
       'phone': user.phone!.startsWith('+') ? user.phone : '+${user.phone}',
     }, onConflict: 'user_id');
     await market.load();
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     if (widget.firstRun) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const AddressPage(requiredAddress: true),
-        ),
-      );
+      openShellTab(context, 0);
     } else {
       message(context, 'تم حفظ بياناتك');
     }
@@ -521,7 +548,9 @@ class _ProfilePageState extends State<ProfilePage> {
         return;
       }
       await market.db.auth.updateUser(UserAttributes(phone: normalized));
-      if (mounted) setState(() => phoneCodeSent = true);
+      if (mounted) {
+        setState(() => phoneCodeSent = true);
+      }
       return;
     }
     final otp = _normalizeDigits(code.text).replaceAll(RegExp(r'\D'), '');
