@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/ui.dart';
 import 'core/design.dart';
 import 'screens/catalog.dart';
+import 'screens/categories_v2.dart';
 import 'screens/auth.dart';
 import 'screens/account_v2.dart';
 import 'screens/address.dart';
@@ -181,7 +182,7 @@ class _HomeShellState extends State<HomeShell> {
                           ? AddressPage(requiredAddress: true)
                           : switch (index) {
                               0 => const StoreHomeV2(),
-                              1 => const CategoriesPage(),
+                              1 => const CategoriesV2Page(),
                               2 => const CartV2Page(),
                               _ => const AccountV2Page(),
                             },
