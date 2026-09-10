@@ -753,7 +753,6 @@ class _OrdersPageState extends State<OrdersPage> {
   }
 
   bool _isPrevious(JsonMap order) =>
-      order['source_channel'] == 'store' ||
       ['delivered', 'cancelled'].contains('${order['status']}');
 
   @override
