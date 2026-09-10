@@ -1,0 +1,68 @@
+name: Flutter Web Preview
+
+on:
+  push:
+    branches:
+      - work/sync-current-customer-20260910
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: flutter-web-preview
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout preview branch
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.8'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build Flutter Web preview
+        run: >-
+          flutter build web --release
+          --base-href "/elmadawymarket-customer-app/"
+          --dart-define=SUPABASE_URL=https://qzvpayjaadbmpayeglon.supabase.co
+          --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6dnBheWphYWRibXBheWVnbG9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDUwMTMsImV4cCI6MjA2MDM4MTAxM30.ti7DYVtr4GdlzCeoUF8zD1lStDQfNuDj3mbsnYWP5H8
+
+      - name: Prepare static hosting
+        run: |
+          touch build/web/.nojekyll
+          cp build/web/index.html build/web/404.html
+
+      - name: Upload web build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-web-preview
+          path: build/web
+          retention-days: 14
+
+      - name: Publish preview branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          publish_branch: gh-pages
+          force_orphan: true
+          commit_message: "preview: ${{ github.sha }}"
