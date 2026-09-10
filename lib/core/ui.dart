@@ -8,6 +8,8 @@ export 'store.dart';
 late MarketStore market;
 final ValueNotifier<int> shellTabIndex = ValueNotifier<int>(0);
 Widget Function(BuildContext context)? notificationsPageBuilder;
+Widget Function(BuildContext context)? favoritesPageBuilder;
+Widget Function(BuildContext context, String id, bool bulk)? productPageBuilder;
 
 void openShellTab(BuildContext context, int index) {
   shellTabIndex.value = index;
@@ -15,10 +17,20 @@ void openShellTab(BuildContext context, int index) {
 }
 
 Future<T?> open<T>(BuildContext context, Widget page) {
-  final resolvedPage = page.runtimeType.toString() == 'NotificationsPage' &&
-          notificationsPageBuilder != null
-      ? notificationsPageBuilder!(context)
-      : page;
+  Widget resolvedPage = page;
+  final type = page.runtimeType.toString();
+  if (type == 'NotificationsPage' && notificationsPageBuilder != null) {
+    resolvedPage = notificationsPageBuilder!(context);
+  } else if (type == 'FavoritesPage' && favoritesPageBuilder != null) {
+    resolvedPage = favoritesPageBuilder!(context);
+  } else if (type == 'ProductPage' && productPageBuilder != null) {
+    final dynamic legacy = page;
+    resolvedPage = productPageBuilder!(
+      context,
+      '${legacy.id}',
+      legacy.bulk == true,
+    );
+  }
   return Navigator.of(context).push<T>(
     PageRouteBuilder<T>(
       pageBuilder: (_, animation, secondaryAnimation) => resolvedPage,
@@ -486,7 +498,7 @@ class StatusSurface extends StatelessWidget {
           ),
         ),
       ),
-    ),
+    },
   );
 }
 
