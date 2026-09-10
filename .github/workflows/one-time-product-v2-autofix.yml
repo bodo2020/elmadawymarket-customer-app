@@ -1,0 +1,54 @@
+name: One-time Product V2 Autofix
+
+on:
+  push:
+    branches:
+      - work/sync-current-customer-20260910
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout work branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/sync-current-customer-20260910
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.8'
+          channel: stable
+          cache: true
+
+      - name: Apply targeted cleanup
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('lib/screens/product_v2.dart')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace("import 'auth.dart';\n", '')
+          text = text.replace(
+              "        if (unit.bulk) return true;",
+              "        if (unit.bulk) {\n          return true;\n        }",
+          )
+          path.write_text(text, encoding='utf-8')
+          PY
+          dart format lib/screens/product_v2.dart
+
+      - name: Commit cleanup if needed
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No cleanup changes needed."
+            exit 0
+          fi
+          git config user.name "bodo2020"
+          git config user.email "bodo2020@users.noreply.github.com"
+          git add lib/screens/product_v2.dart
+          git commit -m "fix: clean product v2 analyzer issues"
+          git push origin HEAD:work/sync-current-customer-20260910
