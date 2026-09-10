@@ -258,91 +258,108 @@ class _CategorySection extends StatelessWidget {
   final double maxWidth;
   const _CategorySection({required this.maxWidth});
 
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: MarketColors.surface,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: MarketColors.divider),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x0A000000),
-              blurRadius: 18,
-              offset: Offset(0, 5),
-            ),
-          ],
+  Widget _title() => const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'تسوق حسب القسم',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          ),
+          SizedBox(height: 2),
+          Text(
+            'وصل للي محتاجه بسرعة',
+            style: TextStyle(fontSize: 11, color: MarketColors.textSecondary),
+          ),
+        ],
+      );
+
+  Widget _allButton(BuildContext context) => TextButton.icon(
+        onPressed: () => open(
+          context,
+          const PageFrame('الأقسام', CategoriesPage()),
         ),
-        child: Column(
-          children: [
-            Row(
+        iconAlignment: IconAlignment.end,
+        icon: const Icon(Icons.chevron_left_rounded, size: 18),
+        label: const Text('عرض الكل'),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final compactHeader = maxWidth < 420 ||
+        MediaQuery.textScalerOf(context).scale(14) > 20;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: MarketColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: MarketColors.divider),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 18,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          if (compactHeader)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'تسوق حسب القسم',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'وصل للي محتاجه بسرعة',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: MarketColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () => open(
-                    context,
-                    const PageFrame('الأقسام', CategoriesPage()),
-                  ),
-                  iconAlignment: IconAlignment.end,
-                  icon: const Icon(Icons.chevron_left_rounded, size: 18),
-                  label: const Text('عرض الكل'),
+                _title(),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: _allButton(context),
                 ),
               ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(child: _title()),
+                _allButton(context),
+              ],
             ),
-            const SizedBox(height: 12),
-            LoadView<List<JsonMap>>(
-              load: () async => await market.db.from('main_categories').select(),
-              builder: (cats) {
-                if (maxWidth >= 700) {
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: cats.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: maxWidth >= 1000 ? 8 : 6,
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: .76,
-                    ),
-                    itemBuilder: (_, i) => HomeCategory(cats[i]),
-                  );
-                }
-                return SizedBox(
-                  height: 146,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: cats.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 10),
-                    itemBuilder: (_, i) => SizedBox(
-                      width: 98,
-                      child: HomeCategory(cats[i]),
-                    ),
+          const SizedBox(height: 12),
+          LoadView<List<JsonMap>>(
+            load: () async => await market.db.from('main_categories').select(),
+            builder: (cats) {
+              if (maxWidth >= 700) {
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: cats.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: maxWidth >= 1000 ? 8 : 6,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: .76,
                   ),
+                  itemBuilder: (_, i) => HomeCategory(cats[i]),
                 );
-              },
-            ),
-          ],
-        ),
-      );
+              }
+              return SizedBox(
+                height: 146 +
+                    (MediaQuery.textScalerOf(context).scale(12) - 12)
+                        .clamp(0, 18) *
+                        2,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: cats.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (_, i) => SizedBox(
+                    width: 98 +
+                        (MediaQuery.textScalerOf(context).scale(12) - 12)
+                            .clamp(0, 16),
+                    child: HomeCategory(cats[i]),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 }
