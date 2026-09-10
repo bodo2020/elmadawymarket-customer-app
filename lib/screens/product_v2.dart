@@ -1632,8 +1632,9 @@ class _CatalogV2PageState extends State<CatalogV2Page> {
       if (widget.bulkOnly && !unit.bulk) {
         return true;
       }
-      if (onlyAvailable && unit.product.maxQuantity(unit.bulk) <= 0)
+      if (onlyAvailable && unit.product.maxQuantity(unit.bulk) <= 0) {
         return true;
+      }
       if (onlyOffers) {
         if (unit.bulk) {
           return true;
