@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../core/design.dart';
 import '../core/ui.dart';
-import 'catalog.dart';
+import 'product_v2.dart';
 
 class SearchV2Page extends StatefulWidget {
   final String initialQuery;
@@ -50,9 +50,7 @@ class _SearchV2PageState extends State<SearchV2Page> {
   void _loadRecent() {
     try {
       final raw = market.prefs.getString('recent-searches-v2');
-      if (raw == null) {
-        return;
-      }
+      if (raw == null) return;
       final decoded = jsonDecode(raw);
       if (decoded is List) {
         recent = decoded
@@ -69,9 +67,7 @@ class _SearchV2PageState extends State<SearchV2Page> {
 
   Future<void> _remember(String value) async {
     final clean = value.trim();
-    if (clean.isEmpty) {
-      return;
-    }
+    if (clean.isEmpty) return;
     final next = [
       clean,
       ...recent.where((item) => item != clean),
@@ -82,9 +78,7 @@ class _SearchV2PageState extends State<SearchV2Page> {
 
   Future<void> _clearRecent() async {
     await market.prefs.remove('recent-searches-v2');
-    if (mounted) {
-      setState(() => recent = const []);
-    }
+    if (mounted) setState(() => recent = const []);
   }
 
   void _schedule(String value) {
@@ -95,16 +89,12 @@ class _SearchV2PageState extends State<SearchV2Page> {
 
   void _apply(String value) {
     final clean = value.trim();
-    if (query == clean) {
-      return;
-    }
+    if (query == clean) return;
     setState(() {
       query = clean;
       revision++;
     });
-    if (clean.isNotEmpty) {
-      unawaited(_remember(clean));
-    }
+    if (clean.isNotEmpty) unawaited(_remember(clean));
   }
 
   Future<List<Product>> _load() async {
@@ -118,14 +108,10 @@ class _SearchV2PageState extends State<SearchV2Page> {
 
   List<Product> _visible(List<Product> source) {
     final products = source.where((product) {
-      if (onlyAvailable && product.maxQuantity(false) <= 0) {
-        return false;
-      }
+      if (onlyAvailable && product.maxQuantity(false) <= 0) return false;
       final original = number(product.data['price']);
       final offer = number(product.data['offer_price']);
-      if (onlyOffers && !(offer > 0 && offer < original)) {
-        return false;
-      }
+      if (onlyOffers && !(offer > 0 && offer < original)) return false;
       return true;
     }).toList();
 
@@ -176,7 +162,7 @@ class _SearchV2PageState extends State<SearchV2Page> {
                         ),
                       IconButton(
                         tooltip: 'البحث بالباركود',
-                        onPressed: () => open(context, const ScannerPage()),
+                        onPressed: () => open(context, const ScannerV2Page()),
                         icon: const Icon(
                           Icons.qr_code_scanner_rounded,
                           color: MarketColors.primary,
@@ -312,12 +298,10 @@ class _SearchV2PageState extends State<SearchV2Page> {
                     );
                   }
 
-                  final cards = <({Product product, bool bulk})>[];
+                  final cards = <ProductUnitV2>[];
                   for (final product in products) {
                     cards.add((product: product, bulk: false));
-                    if (product.bulk) {
-                      cards.add((product: product, bulk: true));
-                    }
+                    if (product.bulk) cards.add((product: product, bulk: true));
                   }
 
                   return CustomScrollView(
@@ -342,11 +326,11 @@ class _SearchV2PageState extends State<SearchV2Page> {
                       SliverPadding(
                         padding: const EdgeInsets.fromLTRB(12, 6, 12, 28),
                         sliver: SliverGrid(
-                          gridDelegate: productGrid(context),
+                          gridDelegate: productGridV2(context),
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
                               final card = cards[index];
-                              return ProductCard(
+                              return ProductCardV2(
                                 card.product,
                                 bulk: card.bulk,
                               );
