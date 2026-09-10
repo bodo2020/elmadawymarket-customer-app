@@ -10,6 +10,7 @@ import 'screens/auth.dart';
 import 'screens/account.dart';
 import 'screens/address.dart';
 import 'screens/checkout.dart';
+import 'screens/notifications_v2.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -93,15 +94,8 @@ class _HomeShellState extends State<HomeShell> {
           ? AppBar(
               centerTitle: true,
               title: const Text('حسابي'),
-              actions: [
-                IconButton(
-                  tooltip: 'الإشعارات',
-                  onPressed: () => open(context, const NotificationsPage()),
-                  icon: const Icon(
-                    Icons.notifications_outlined,
-                    color: MarketColors.primary,
-                  ),
-                ),
+              actions: const [
+                CustomerNotificationBellV2(color: MarketColors.primary),
               ],
             )
           : AppBar(
@@ -151,14 +145,7 @@ class _HomeShellState extends State<HomeShell> {
                   ),
                 ),
               ),
-              actions: [
-                if (market.user != null)
-                  IconButton(
-                    tooltip: 'الإشعارات',
-                    onPressed: () => open(context, const NotificationsPage()),
-                    icon: const Icon(Icons.notifications_outlined),
-                  ),
-              ],
+              actions: const [CustomerNotificationBellV2()],
             ),
       body: Align(
         alignment: Alignment.topCenter,
