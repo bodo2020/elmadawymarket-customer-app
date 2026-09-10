@@ -7,6 +7,7 @@ import 'core/ui.dart';
 import 'core/design.dart';
 import 'screens/catalog.dart';
 import 'screens/categories_v2.dart';
+import 'screens/search_v2.dart';
 import 'screens/auth.dart';
 import 'screens/account_v2.dart';
 import 'screens/address.dart';
@@ -121,10 +122,7 @@ class _HomeShellState extends State<HomeShell> {
       ),
       titleSpacing: 4,
       title: _CustomerSearchBar(
-        onSearch: () => open(
-          context,
-          const CatalogPage(title: 'البحث', search: true),
-        ),
+        onSearch: () => open(context, const SearchV2Page()),
         onBarcode: () => open(context, const ScannerPage()),
       ),
       actions: const [CustomerNotificationBellV2()],
