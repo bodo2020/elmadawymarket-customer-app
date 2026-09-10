@@ -9,7 +9,8 @@ import 'screens/catalog.dart';
 import 'screens/auth.dart';
 import 'screens/account.dart';
 import 'screens/address.dart';
-import 'screens/checkout.dart';
+import 'screens/home_v2.dart';
+import 'screens/cart_v2.dart';
 import 'screens/notifications_v2.dart';
 
 Future<void> main() async {
@@ -87,67 +88,53 @@ class _HomeShellState extends State<HomeShell> {
     }
   }
 
+  PreferredSizeWidget _appBar(BuildContext context) {
+    if (index == 2) {
+      return AppBar(
+        centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.all(7),
+          child: Image.asset('assets/logo.png'),
+        ),
+        title: const Text('السلة'),
+        actions: const [CustomerNotificationBellV2()],
+      );
+    }
+    if (index == 3) {
+      return AppBar(
+        centerTitle: true,
+        title: const Text('حسابي'),
+        actions: const [
+          CustomerNotificationBellV2(color: MarketColors.primary),
+        ],
+      );
+    }
+    return AppBar(
+      leading: Padding(
+        padding: const EdgeInsets.all(7),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => shellTabIndex.value = 0,
+          child: Image.asset('assets/logo.png'),
+        ),
+      ),
+      titleSpacing: 4,
+      title: _CustomerSearchBar(
+        onSearch: () => open(
+          context,
+          const CatalogPage(title: 'البحث', search: true),
+        ),
+        onBarcode: () => open(context, const ScannerPage()),
+      ),
+      actions: const [CustomerNotificationBellV2()],
+    );
+  }
+
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: market,
     builder: (context, _) => Scaffold(
-      appBar: index == 3
-          ? AppBar(
-              centerTitle: true,
-              title: const Text('حسابي'),
-              actions: const [
-                CustomerNotificationBellV2(color: MarketColors.primary),
-              ],
-            )
-          : AppBar(
-              leading: Padding(
-                padding: const EdgeInsets.all(6),
-                child: Image.asset('assets/logo.png'),
-              ),
-              title: InkWell(
-                borderRadius: BorderRadius.circular(MarketRadius.large),
-                onTap: () => open(
-                  context,
-                  const CatalogPage(title: 'البحث', search: true),
-                ),
-                child: Container(
-                  height: 52,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: MarketSpace.md,
-                  ),
-                  decoration: BoxDecoration(
-                    color: MarketColors.surfaceSecondary,
-                    borderRadius: BorderRadius.circular(MarketRadius.large),
-                    border: Border.all(color: MarketColors.border),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(
-                        Icons.search_rounded,
-                        size: 21,
-                        color: MarketColors.textSecondary,
-                      ),
-                      SizedBox(width: MarketSpace.sm),
-                      Expanded(
-                        child: Text(
-                          'دور على منتج أو قسم…',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xff7b817c),
-                          ),
-                        ),
-                      ),
-                      Icon(
-                        Icons.qr_code_scanner_rounded,
-                        size: 21,
-                        color: MarketColors.primary,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: const [CustomerNotificationBellV2()],
-            ),
+      appBar: _appBar(context),
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
@@ -193,9 +180,9 @@ class _HomeShellState extends State<HomeShell> {
                       child: market.runtime == null && index < 2
                           ? AddressPage(requiredAddress: true)
                           : switch (index) {
-                              0 => const StoreHome(),
+                              0 => const StoreHomeV2(),
                               1 => const CategoriesPage(),
-                              2 => const CartPage(),
+                              2 => const CartV2Page(),
                               _ => const AccountPage(),
                             },
                     ),
@@ -268,4 +255,66 @@ class _HomeShellState extends State<HomeShell> {
       ),
     ),
   );
+}
+
+class _CustomerSearchBar extends StatelessWidget {
+  final VoidCallback onSearch;
+  final VoidCallback onBarcode;
+  const _CustomerSearchBar({required this.onSearch, required this.onBarcode});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: MarketColors.surfaceSecondary,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: MarketColors.border),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: InkWell(
+                borderRadius: const BorderRadiusDirectional.horizontal(
+                  start: Radius.circular(14),
+                ),
+                onTap: onSearch,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.search_rounded,
+                        size: 20,
+                        color: MarketColors.textTertiary,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'دور على منتج أو قسم…',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: MarketColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Container(width: 1, height: 28, color: MarketColors.border),
+            IconButton(
+              tooltip: 'البحث بالباركود',
+              onPressed: onBarcode,
+              icon: const Icon(
+                Icons.qr_code_scanner_rounded,
+                size: 20,
+                color: MarketColors.primary,
+              ),
+            ),
+          ],
+        ),
+      );
 }
