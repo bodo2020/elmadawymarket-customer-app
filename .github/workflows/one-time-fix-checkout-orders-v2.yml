@@ -33,7 +33,8 @@ jobs:
               raise SystemExit('orders empty-state pattern not found')
           p.write_text(text.replace(old, new, 1))
           PY
-          dart fix --apply lib/screens/checkout_v2.dart lib/screens/orders_v2.dart
+          dart fix --apply lib/screens/checkout_v2.dart
+          dart fix --apply lib/screens/orders_v2.dart
           dart format lib/screens/checkout_v2.dart lib/screens/orders_v2.dart
       - name: Commit fixes
         shell: bash
