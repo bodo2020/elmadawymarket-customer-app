@@ -34,6 +34,7 @@ Future<void> main() async {
     Supabase.instance.client,
     await SharedPreferences.getInstance(),
   );
+  notificationsPageBuilder = (_) => const NotificationsV2Page();
   runApp(const MarketApp());
   await market.start();
 }
