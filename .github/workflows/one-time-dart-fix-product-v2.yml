@@ -1,0 +1,46 @@
+name: One-time Dart Fix Product V2
+
+on:
+  push:
+    branches:
+      - work/sync-current-customer-20260910
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout work branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/sync-current-customer-20260910
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.8'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Apply Dart fixes
+        run: |
+          dart fix --apply lib/screens/product_v2.dart
+          dart format lib/screens/product_v2.dart
+
+      - name: Commit fixes if needed
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No fixes needed."
+            exit 0
+          fi
+          git config user.name "bodo2020"
+          git config user.email "bodo2020@users.noreply.github.com"
+          git add lib/screens/product_v2.dart
+          git commit -m "fix: apply dart fixes to product v2"
+          git push origin HEAD:work/sync-current-customer-20260910
