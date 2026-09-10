@@ -89,6 +89,7 @@ class _SearchV2PageState extends State<SearchV2Page> {
 
   void _schedule(String value) {
     timer?.cancel();
+    setState(() {});
     timer = Timer(const Duration(milliseconds: 350), () => _apply(value));
   }
 
@@ -102,7 +103,7 @@ class _SearchV2PageState extends State<SearchV2Page> {
       revision++;
     });
     if (clean.isNotEmpty) {
-      _remember(clean);
+      unawaited(_remember(clean));
     }
   }
 
@@ -310,6 +311,15 @@ class _SearchV2PageState extends State<SearchV2Page> {
                       }),
                     );
                   }
+
+                  final cards = <({Product product, bool bulk})>[];
+                  for (final product in products) {
+                    cards.add((product: product, bulk: false));
+                    if (product.bulk) {
+                      cards.add((product: product, bulk: true));
+                    }
+                  }
+
                   return CustomScrollView(
                     key: PageStorageKey('search-v2-$query'),
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -335,17 +345,13 @@ class _SearchV2PageState extends State<SearchV2Page> {
                           gridDelegate: productGrid(context),
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
-                              final product = products[index ~/ 2];
-                              final bulkCard = index.isOdd;
-                              if (bulkCard && !product.bulk) {
-                                return const SizedBox.shrink();
-                              }
-                              return ProductCard(product, bulk: bulkCard);
+                              final card = cards[index];
+                              return ProductCard(
+                                card.product,
+                                bulk: card.bulk,
+                              );
                             },
-                            childCount: products.fold<int>(
-                              0,
-                              (count, product) => count + (product.bulk ? 2 : 1),
-                            ),
+                            childCount: cards.length,
                           ),
                         ),
                       ),
