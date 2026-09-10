@@ -1,6 +1,6 @@
 # خريطة تحويل تطبيق العملاء
 
-المرجع: `bodo2020/suq-arabi-mobile-market` / `main` / `5caa03569ca48f236f54f57fae5e8121f088e4bb`.
+المرجع الأساسي: `bodo2020/suq-arabi-mobile-market` / `main` / `5caa03569ca48f236f54f57fae5e8121f088e4bb`، مع مزامنة تغييرات Notification Center V2 حتى `dfdf30373d71bee7f602b721535ae0e1119bc66d`.
 
 | تدفق React المرجعي | تنفيذ Flutter | الربط |
 |---|---|---|
@@ -18,7 +18,7 @@
 | Favorites | FavoritesPage | favorites وset_customer_favorite_unit |
 | PurchaseHistory (المسار الفعلي /orders) | OrdersPage | فواتير الفرع والأونلاين عبر get_my_purchase_history |
 | OrderTimeline | OrderTimeline | الحالة وتواريخ order_status_history |
-| Notifications | NotificationsPage | customer_notifications والقراءة الفردية/الكل |
+| Notifications | NotificationsV2Page + CustomerNotificationBellV2 | sync_my_notification_center_v2، get_my_notification_center_v2، mark_notification_read_v2، mark_all_notifications_read_v2 |
 | Vouchers وبطاقة العضوية | LoyaltyPage | باركود العضوية ونقاط وقسائم وسجل النقاط |
 | ReturnRequests، CreateReturnRequest | ReturnsPage، ReturnFormPage | RPC واحد + رفع صور المستخدم |
 
@@ -26,7 +26,7 @@
 
 - شاشات Flutter أصلية تستخدم Cairo المضمّن وDesign System موحدًا يعتمد الأخضر #005931 وخلفية #F7F8F7. تم تخصيص البحث والتنقل والأقسام والمنتجات والأزرار والدخول والحساب والعنوان والدفع والحالات المشتركة. لا يزال التطابق الكامل بكسلًا لكل بيانات الإنتاج غير مثبت.
 - الخريطة المرئية من OpenStreetMap بدل Google JavaScript Maps. تحديد أهلية التوصيل يستخدم نفس `route-distance` الحالي.
-- تحديث الطلبات والإشعارات عبر Realtime مع تحديث كل 30 ثانية كمسار احتياطي وتحديث يدوي. لا توجد Push خلفية مضافة.
+- Notification Center V2 والعداد والقراءة الفردية/الجماعية وفتح الإجراء المرتبط متزامنة مع النسخة الحالية. Flutter يستخدم تحديثًا دوريًا كمسار احتياطي. Native Push الخلفي لم يُفعّل بعد لأنه يحتاج FCM/APNs وإعدادات المنصات الخاصة بتطبيق Flutter.
 - الروابط الخارجية للبانرات تُفتح في المتصفح؛ تم ربط روابط المنتجات والأقسام والشركات والبحث والجملة المعروفة داخليًا. أي رابط داخلي مخصص خارجها يحتاج إضافته قبل استخدامه في بانر.
 - الأقسام الفرعية تعرض نتائج منتجاتها مباشرة، وصفحة تفاصيل المنتج تعرض المنتجات المشابهة.
 - يمكن اختيار القسيمة في الدفع من القائمة أو إدخال الكود والقيمة؛ بطاقة الولاء والقسائم وإنشاؤها موجودة بصفحة العضوية.
