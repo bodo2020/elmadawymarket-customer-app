@@ -6,6 +6,13 @@ export 'models.dart';
 export 'store.dart';
 
 late MarketStore market;
+final ValueNotifier<int> shellTabIndex = ValueNotifier<int>(0);
+
+void openShellTab(BuildContext context, int index) {
+  shellTabIndex.value = index;
+  Navigator.of(context).popUntil((route) => route.isFirst);
+}
+
 Future<T?> open<T>(BuildContext context, Widget page) =>
     Navigator.of(context).push<T>(
       PageRouteBuilder<T>(
@@ -191,8 +198,83 @@ class PageFrame extends StatelessWidget {
         ),
       ),
     ),
-    bottomNavigationBar: bottom,
+    bottomNavigationBar: bottom ?? const MarketRouteBottomBar(),
   );
+}
+
+class MarketRouteBottomBar extends StatelessWidget {
+  const MarketRouteBottomBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final items = <({IconData icon, String label})>[
+      (icon: Icons.home_outlined, label: 'الرئيسية'),
+      (icon: Icons.grid_view_outlined, label: 'الأقسام'),
+      (icon: Icons.shopping_cart_outlined, label: 'السلة'),
+      (icon: Icons.person_outline_rounded, label: 'حسابي'),
+    ];
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+      child: Container(
+        constraints: BoxConstraints(
+          minHeight: 66 + (MediaQuery.textScalerOf(context).scale(12) - 12) * 4,
+        ),
+        decoration: BoxDecoration(
+          color: MarketColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: MarketColors.divider),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x16000000),
+              blurRadius: 18,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            for (var i = 0; i < items.length; i++)
+              Expanded(
+                child: InkWell(
+                  onTap: () => openShellTab(context, i),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Badge(
+                          isLabelVisible: i == 2 && market.cart.isNotEmpty,
+                          backgroundColor: MarketColors.primary,
+                          label: Text('${market.cart.length}'),
+                          child: Icon(
+                            items[i].icon,
+                            color: MarketColors.textSecondary,
+                            size: 23,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          items[i].label,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: MarketColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class LoadView<T> extends StatefulWidget {
@@ -463,17 +545,11 @@ class _LoadingSurfaceState extends State<LoadingSurface>
                 Row(
                   children: [
                     Expanded(
-                      child: _Skeleton(
-                        height: 180,
-                        radius: MarketRadius.large,
-                      ),
+                      child: _Skeleton(height: 180, radius: MarketRadius.large),
                     ),
                     SizedBox(width: MarketSpace.sm),
                     Expanded(
-                      child: _Skeleton(
-                        height: 180,
-                        radius: MarketRadius.large,
-                      ),
+                      child: _Skeleton(height: 180, radius: MarketRadius.large),
                     ),
                   ],
                 ),

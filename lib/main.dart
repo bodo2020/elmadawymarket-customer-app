@@ -63,6 +63,8 @@ class _HomeShellState extends State<HomeShell> {
   @override
   void initState() {
     super.initState();
+    index = shellTabIndex.value;
+    shellTabIndex.addListener(_handleShellTab);
     authSubscription = market.db.auth.onAuthStateChange.listen((event) {
       if (event.event == AuthChangeEvent.passwordRecovery && mounted) {
         open(context, const ProfilePage());
@@ -72,8 +74,15 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   void dispose() {
+    shellTabIndex.removeListener(_handleShellTab);
     authSubscription?.cancel();
     super.dispose();
+  }
+
+  void _handleShellTab() {
+    if (mounted && index != shellTabIndex.value) {
+      setState(() => index = shellTabIndex.value);
+    }
   }
 
   @override
@@ -229,7 +238,7 @@ class _HomeShellState extends State<HomeShell> {
               height:
                   66 + (MediaQuery.textScalerOf(context).scale(12) - 12) * 4,
               selectedIndex: index,
-              onDestinationSelected: (value) => setState(() => index = value),
+              onDestinationSelected: (value) => shellTabIndex.value = value,
               animationDuration: MediaQuery.disableAnimationsOf(context)
                   ? Duration.zero
                   : const Duration(milliseconds: 220),

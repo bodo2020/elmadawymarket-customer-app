@@ -6,62 +6,390 @@ import '../core/design.dart';
 import '../core/ui.dart';
 import 'account.dart';
 
-class ReturnsPage extends StatelessWidget {
+class ReturnsPage extends StatefulWidget {
   const ReturnsPage({super.key});
+
+  @override
+  State<ReturnsPage> createState() => _ReturnsPageState();
+}
+
+class _ReturnsPageState extends State<ReturnsPage> {
+  int revision = 0;
+  String filter = 'all';
+
+  String _state(JsonMap request) => '${request['status'] ?? 'pending'}';
+
   @override
   Widget build(BuildContext context) => PageFrame(
     'طلبات الاسترجاع',
     LoadView<List<JsonMap>>(
+      key: ValueKey(revision),
       load: () async => await market.db
           .from('return_requests')
           .select()
           .eq('user_id', market.user!.id)
           .order('created_at', ascending: false),
-      builder: (data) => data.isEmpty
-          ? const EmptyView('مفيش طلبات استرجاع')
-          : ListView(
-              padding: const EdgeInsets.all(MarketSpace.md),
-              children: data
-                  .map(
-                    (r) => panel(
-                      ExpansionTile(
-                        title: Text(
-                          statusLabels['${r['status']}'] ?? '${r['status']}',
-                        ),
-                        subtitle: Text('${r['reason']}'),
-                        children: [
-                          Text(displayDate(r['created_at'])),
-                          if (r['admin_notes'] != null)
-                            Text('${r['admin_notes']}'),
-                          LoadView<List<JsonMap>>(
-                            load: () async => await market.db
-                                .from('return_request_items')
-                                .select('*,products(name)')
-                                .eq('return_request_id', r['id']),
-                            builder: (items) => Column(
-                              children: items
-                                  .map(
-                                    (i) => ListTile(
-                                      title: Text(
-                                        '${row(i['products'])['name'] ?? 'منتج'}',
-                                      ),
-                                      trailing: Text('${i['quantity']}'),
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          ),
-                          ...((r['images'] as List?) ?? []).map(
-                            (url) => photo('$url', height: 180),
-                          ),
-                        ],
+      builder: (data) {
+        final pending = data.where((r) => _state(r) == 'pending').length;
+        final approved = data
+            .where((r) => ['approved', 'accepted'].contains(_state(r)))
+            .length;
+        final rejected = data
+            .where((r) => ['rejected', 'declined'].contains(_state(r)))
+            .length;
+        final visible = filter == 'all'
+            ? data
+            : data.where((r) {
+                final value = _state(r);
+                if (filter == 'approved') {
+                  return ['approved', 'accepted'].contains(value);
+                }
+                if (filter == 'rejected') {
+                  return ['rejected', 'declined'].contains(value);
+                }
+                return value == 'pending';
+              }).toList();
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: MarketColors.primarySurface,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: MarketColors.primaryLight),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.assignment_return_outlined,
+                        color: MarketColors.primary,
+                        size: 31,
                       ),
-                    ),
-                  )
-                  .toList(),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'طلبات الاسترجاع',
+                              style: TextStyle(
+                                color: MarketColors.primary,
+                                fontSize: 23,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              'تابع طلباتك من وقت الإرسال لحد قرار المراجعة، وشوف المنتجات والملاحظات والصور في مكان واحد.',
+                              style: TextStyle(
+                                color: MarketColors.textSecondary,
+                                height: 1.7,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => setState(() => revision++),
+                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        label: const Text('تحديث'),
+                      ),
+                      OutlinedButton(
+                        onPressed: () {},
+                        child: const Text('طلباتي'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _ReturnStat(
+                          'قيد المراجعة',
+                          '$pending',
+                          MarketColors.warning,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _ReturnStat(
+                          'مقبولة',
+                          '$approved',
+                          MarketColors.success,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _ReturnStat(
+                          'مرفوضة',
+                          '$rejected',
+                          MarketColors.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                ChoiceChip(
+                  label: const Text('الكل'),
+                  selected: filter == 'all',
+                  onSelected: (_) => setState(() => filter = 'all'),
+                ),
+                ChoiceChip(
+                  label: const Text('قيد المراجعة'),
+                  selected: filter == 'pending',
+                  onSelected: (_) => setState(() => filter = 'pending'),
+                ),
+                ChoiceChip(
+                  label: const Text('مقبولة'),
+                  selected: filter == 'approved',
+                  onSelected: (_) => setState(() => filter = 'approved'),
+                ),
+                ChoiceChip(
+                  label: const Text('مرفوضة'),
+                  selected: filter == 'rejected',
+                  onSelected: (_) => setState(() => filter = 'rejected'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (visible.isEmpty)
+              const StatusSurface(
+                title: 'مفيش طلبات استرجاع في القسم ده',
+                message: 'طلبات الاسترجاع وحالتها هتظهر هنا.',
+                icon: Icons.assignment_return_outlined,
+              )
+            else
+              ...visible.map((request) => _ReturnRequestCard(request)),
+          ],
+        );
+      },
     ),
   );
+}
+
+class _ReturnStat extends StatelessWidget {
+  final String label, value;
+  final Color color;
+  const _ReturnStat(this.label, this.value, this.color);
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 13),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      children: [
+        Icon(Icons.circle_outlined, color: color, size: 19),
+        const SizedBox(height: 5),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 10,
+            color: MarketColors.textSecondary,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
+        ),
+      ],
+    ),
+  );
+}
+
+class _ReturnRequestCard extends StatelessWidget {
+  final JsonMap request;
+  const _ReturnRequestCard(this.request);
+
+  @override
+  Widget build(BuildContext context) {
+    final rawStatus = '${request['status'] ?? 'pending'}';
+    final rejected = ['rejected', 'declined'].contains(rawStatus);
+    final approved = ['approved', 'accepted'].contains(rawStatus);
+    final color = rejected
+        ? MarketColors.error
+        : approved
+        ? MarketColors.success
+        : MarketColors.warning;
+    final label = rejected
+        ? 'مرفوضة'
+        : approved
+        ? 'مقبولة'
+        : 'قيد المراجعة';
+    final id = '${request['id'] ?? ''}';
+    final shortId = id.length > 8
+        ? id.substring(0, 8).toUpperCase()
+        : id.toUpperCase();
+    return Card(
+      margin: const EdgeInsets.only(bottom: 14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'طلب استرجاع',
+              style: TextStyle(fontSize: 12, color: MarketColors.textTertiary),
+            ),
+            SelectableText(
+              '#$shortId',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            Text(
+              displayDate(request['created_at']),
+              style: const TextStyle(
+                fontSize: 11,
+                color: MarketColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 13),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: .08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: color.withValues(alpha: .16)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    rejected
+                        ? Icons.cancel_outlined
+                        : approved
+                        ? Icons.check_circle_outline
+                        : Icons.schedule_rounded,
+                    color: color,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          label,
+                          style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          approved
+                              ? 'تمت الموافقة على طلب الاسترجاع.'
+                              : rejected
+                              ? 'تعذر قبول طلب الاسترجاع.'
+                              : 'استلمنا طلبك وفريقنا يراجع المنتجات والسبب.',
+                          style: TextStyle(color: color, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 13),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: MarketColors.surfaceSecondary,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'سبب الاسترجاع',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: MarketColors.textTertiary,
+                    ),
+                  ),
+                  Text(
+                    '${request['reason'] ?? ''}',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  if (request['admin_notes'] != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'ملاحظة المراجعة: ${request['admin_notes']}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: MarketColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text(
+                'عرض المنتجات والصور',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              children: [
+                LoadView<List<JsonMap>>(
+                  load: () async => await market.db
+                      .from('return_request_items')
+                      .select('*,products(name)')
+                      .eq('return_request_id', request['id']),
+                  builder: (items) => Column(
+                    children: items
+                        .map(
+                          (item) => ListTile(
+                            leading: const Icon(Icons.inventory_2_outlined),
+                            title: Text(
+                              '${row(item['products'])['name'] ?? 'منتج'}',
+                            ),
+                            trailing: Text('× ${item['quantity']}'),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+                ...((request['images'] as List?) ?? []).map(
+                  (url) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: photo('$url', height: 180),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class ReturnFormPage extends StatefulWidget {

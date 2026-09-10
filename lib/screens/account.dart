@@ -752,6 +752,10 @@ class _OrdersPageState extends State<OrdersPage> {
     }
   }
 
+  bool _isPrevious(JsonMap order) =>
+      order['source_channel'] == 'store' ||
+      ['delivered', 'cancelled'].contains('${order['status']}');
+
   @override
   Widget build(BuildContext context) => PageFrame(
     'مشترياتي',
@@ -762,117 +766,281 @@ class _OrdersPageState extends State<OrdersPage> {
               child: const Text('تسجيل الدخول'),
             ),
           )
-        : Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment(value: false, label: Text('الجارية')),
-                    ButtonSegment(value: true, label: Text('السابقة')),
-                  ],
-                  selected: {previous},
-                  onSelectionChanged: (s) => setState(() => previous = s.first),
-                ),
-              ),
-              if (error != null)
-                TextButton(
-                  onPressed: refresh,
-                  child: Text('${friendlyError(error!)} — تحديث'),
-                ),
-              Expanded(
-                child: data == null
-                    ? const LoadingSurface()
-                    : RefreshIndicator(
-                        onRefresh: refresh,
-                        child: ListView(
-                          padding: const EdgeInsets.all(16),
-                          children: [
-                            if (!data!.any(
-                              (e) =>
-                                  previous ==
-                                  (e['source_channel'] == 'store' ||
-                                      [
-                                        'delivered',
-                                        'cancelled',
-                                      ].contains(e['status'])),
-                            ))
-                              const StatusSurface(
-                                title: 'مفيش طلبات هنا لسه',
-                                message:
-                                    'طلباتك هتظهر هنا لمتابعة حالتها وتفاصيلها.',
-                                icon: Icons.receipt_long_outlined,
-                              ),
-                            for (final order in data!.where(
-                              (e) =>
-                                  previous ==
-                                  (e['source_channel'] == 'store' ||
-                                      [
-                                        'delivered',
-                                        'cancelled',
-                                      ].contains(e['status'])),
-                            ))
-                              panel(
-                                ExpansionTile(
-                                  initiallyExpanded:
-                                      order['id'] == widget.orderId,
-                                  tilePadding: EdgeInsets.zero,
-                                  title: Text(
-                                    '#${order['tracking_number'] ?? '${order['id']}'.substring(0, 8)}',
-                                  ),
-                                  subtitle: Text(
-                                    '${statusLabels['${order['status']}'] ?? order['status']} • ${money(order['total'])}',
-                                  ),
-                                  children: [
-                                    Text(displayDate(order['created_at'])),
-                                    Text('${order['branch_name'] ?? ''}'),
-                                    if (order['source_channel'] != 'store')
-                                      OrderTimeline(
-                                        '${order['status']}',
-                                        orderId: '${order['id']}',
-                                      ),
-                                    Text('${order['shipping_address'] ?? ''}'),
-                                    Text(
-                                      'الدفع: ${statusLabels['${order['payment_status']}'] ?? order['payment_status'] ?? ''}',
-                                    ),
-                                    ...normalizeOrderItems(order['items']).map(
-                                      (item) => ListTile(
-                                        title: Text(
-                                          '${item['name'] ?? 'منتج'}',
-                                        ),
-                                        subtitle: Text(
-                                          '${item['quantity']} ${item['unit_of_measure'] == 'weight'
-                                              ? 'كجم'
-                                              : item['is_bulk'] == true
-                                              ? 'عبوة'
-                                              : 'قطعة'}',
-                                        ),
-                                        trailing: Text(money(item['total'])),
-                                      ),
-                                    ),
-                                    if (order['source_channel'] == 'online' &&
-                                        order['status'] == 'delivered')
-                                      TextButton(
-                                        onPressed: () => open(
-                                          context,
-                                          ReturnFormPage(order),
-                                        ),
-                                        child: const Text('طلب استرجاع'),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                          ],
+        : data == null
+        ? const LoadingSurface()
+        : RefreshIndicator(
+            onRefresh: refresh,
+            child: Builder(
+              builder: (context) {
+                final visible = data!
+                    .where((order) => previous == _isPrevious(order))
+                    .toList();
+                final currentCount = data!.where((e) => !_isPrevious(e)).length;
+                final storeCount = data!
+                    .where((e) => e['source_channel'] == 'store')
+                    .length;
+                final onlineCount = data!.length - storeCount;
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+                  children: [
+                    _FeatureIntro(
+                      icon: Icons.receipt_long_outlined,
+                      title: 'مشترياتك كلها',
+                      subtitle:
+                          'طلبات التوصيل وفواتير الفرع المرتبطة بباركود العضوية في سجل واحد.',
+                      actions: [
+                        OutlinedButton.icon(
+                          onPressed: refresh,
+                          icon: const Icon(Icons.refresh_rounded, size: 18),
+                          label: const Text('تحديث'),
+                        ),
+                        OutlinedButton(
+                          onPressed: () => open(context, const ReturnsPage()),
+                          child: const Text('طلبات الاسترجاع'),
+                        ),
+                      ],
+                      stats: [
+                        _MiniStat('جارية', '$currentCount'),
+                        _MiniStat('من الفرع', '$storeCount'),
+                        _MiniStat('أونلاين', '$onlineCount'),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SegmentedButton<bool>(
+                      segments: [
+                        ButtonSegment(
+                          value: false,
+                          label: Text('الجارية ($currentCount)'),
+                        ),
+                        ButtonSegment(
+                          value: true,
+                          label: Text(
+                            'السابقة (${data!.length - currentCount})',
+                          ),
+                        ),
+                      ],
+                      selected: {previous},
+                      onSelectionChanged: (s) =>
+                          setState(() => previous = s.first),
+                    ),
+                    if (error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: TextButton(
+                          onPressed: refresh,
+                          child: Text('${friendlyError(error!)} — تحديث'),
                         ),
                       ),
-              ),
-            ],
+                    const SizedBox(height: 16),
+                    if (visible.isEmpty)
+                      const StatusSurface(
+                        title: 'مفيش طلبات هنا لسه',
+                        message: 'طلباتك هتظهر هنا لمتابعة حالتها وتفاصيلها.',
+                        icon: Icons.receipt_long_outlined,
+                      )
+                    else
+                      ...visible.map(
+                        (order) => _OrderCard(
+                          order: order,
+                          initiallyExpanded: order['id'] == widget.orderId,
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
           ),
-    actions: [
-      IconButton(
-        tooltip: 'تحديث',
-        onPressed: refresh,
-        icon: const Icon(Icons.refresh),
+  );
+}
+
+class _OrderCard extends StatelessWidget {
+  final JsonMap order;
+  final bool initiallyExpanded;
+  const _OrderCard({required this.order, required this.initiallyExpanded});
+
+  @override
+  Widget build(BuildContext context) {
+    final online = order['source_channel'] != 'store';
+    final status = '${order['status'] ?? ''}';
+    final items = normalizeOrderItems(order['items']);
+    final delivered = status == 'delivered';
+    final cancelled = status == 'cancelled';
+    final statusColor = cancelled
+        ? MarketColors.error
+        : delivered
+        ? MarketColors.success
+        : MarketColors.warning;
+    final identifier =
+        order['invoice_number'] ??
+        order['tracking_number'] ??
+        '${order['id'] ?? ''}';
+    return Card(
+      margin: const EdgeInsets.only(bottom: 14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: online
+                        ? MarketColors.infoSurface
+                        : MarketColors.primarySurface,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    online ? 'طلب أونلاين' : 'شراء من الفرع',
+                    style: TextStyle(
+                      color: online ? MarketColors.info : MarketColors.primary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${order['branch_name'] ?? 'ماركت المعداوي'}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: MarketColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'رقم الطلب',
+              style: TextStyle(fontSize: 11, color: MarketColors.textTertiary),
+            ),
+            SelectableText(
+              '#$identifier',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            Text(
+              displayDate(order['created_at']),
+              style: const TextStyle(
+                fontSize: 11,
+                color: MarketColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(13),
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: .08),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    delivered
+                        ? Icons.check_circle_outline
+                        : cancelled
+                        ? Icons.cancel_outlined
+                        : Icons.schedule_rounded,
+                    color: statusColor,
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          statusLabels[status] ?? status,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          delivered
+                              ? 'تم توصيل طلبك بنجاح.'
+                              : cancelled
+                              ? 'تم إلغاء هذا الطلب.'
+                              : 'طلبك قيد التجهيز والمتابعة.',
+                          style: TextStyle(color: statusColor, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(child: _OrderValue('الإجمالي', money(order['total']))),
+                Expanded(child: _OrderValue('عدد المنتجات', '${items.length}')),
+              ],
+            ),
+            ExpansionTile(
+              initiallyExpanded: initiallyExpanded,
+              tilePadding: EdgeInsets.zero,
+              title: const Text(
+                'عرض التفاصيل',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+              children: [
+                if (online) OrderTimeline(status, orderId: '${order['id']}'),
+                if ('${order['shipping_address'] ?? ''}'.isNotEmpty)
+                  ListTile(
+                    leading: const Icon(Icons.location_on_outlined),
+                    title: Text('${order['shipping_address']}'),
+                  ),
+                ...items.map(
+                  (item) => ListTile(
+                    leading: _accountIcon(Icons.inventory_2_outlined),
+                    title: Text('${item['name'] ?? 'منتج'}'),
+                    subtitle: Text('الكمية: ${item['quantity']}'),
+                    trailing: Text(
+                      money(item['total']),
+                      style: const TextStyle(
+                        color: MarketColors.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                if (online && delivered)
+                  FilledButton.tonal(
+                    onPressed: () => open(context, ReturnFormPage(order)),
+                    child: const Text('طلب استرجاع'),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OrderValue extends StatelessWidget {
+  final String label, value;
+  const _OrderValue(this.label, this.value);
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(fontSize: 11, color: MarketColors.textTertiary),
+      ),
+      Text(
+        value,
+        style: const TextStyle(
+          fontSize: 15,
+          color: MarketColors.primary,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     ],
   );
@@ -969,6 +1137,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
     super.dispose();
   }
 
+  bool unreadOnly = false;
+
+  Future<void> _markAllRead() async {
+    await perform(context, () async {
+      await market.db
+          .from('customer_notifications')
+          .update({'read_at': DateTime.now().toUtc().toIso8601String()})
+          .eq('user_id', market.user!.id)
+          .isFilter('read_at', null);
+      if (mounted) setState(() => revision++);
+    });
+  }
+
   @override
   Widget build(BuildContext context) => PageFrame(
     'الإشعارات',
@@ -982,61 +1163,137 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 .eq('user_id', market.user!.id)
                 .order('created_at', ascending: false)
                 .limit(200),
-            builder: (data) => data.isEmpty
-                ? const EmptyView('مفيش إشعارات جديدة')
-                : ListView(
-                    padding: const EdgeInsets.all(12),
-                    children: data
-                        .map(
-                          (n) => Card(
-                            child: ListTile(
-                              leading: Icon(
-                                n['read_at'] == null
-                                    ? Icons.notifications_active
-                                    : Icons.notifications_none,
-                              ),
-                              title: Text('${n['title']}'),
-                              subtitle: Text('${n['body']}'),
-                              onTap: () => perform(context, () async {
-                                await market.db
-                                    .from('customer_notifications')
-                                    .update({
-                                      'read_at': DateTime.now()
-                                          .toUtc()
-                                          .toIso8601String(),
-                                    })
-                                    .eq('id', n['id'])
-                                    .eq('user_id', market.user!.id);
-                                if (mounted) setState(() => revision++);
-                                if (context.mounted && n['order_id'] != null) {
-                                  await open(
-                                    context,
-                                    OrdersPage(orderId: '${n['order_id']}'),
-                                  );
-                                }
-                              }),
-                            ),
-                          ),
-                        )
-                        .toList(),
+            builder: (data) {
+              final unread = data.where((n) => n['read_at'] == null).toList();
+              final visible = unreadOnly ? unread : data;
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+                children: [
+                  _FeatureIntro(
+                    icon: Icons.notifications_active_outlined,
+                    title: 'تحديثات طلباتك',
+                    subtitle:
+                        'أي تغيير في حالة الطلب أو الدفع يظهر هنا فورًا وتقدر تفتح الطلب من الإشعار.',
+                    actions: [
+                      FilledButton.tonalIcon(
+                        onPressed: _markAllRead,
+                        icon: const Icon(Icons.done_all_rounded, size: 18),
+                        label: const Text('تحديد الكل كمقروء'),
+                      ),
+                    ],
+                    stats: [
+                      _MiniStat(
+                        'غير مقروء',
+                        '${unread.length}',
+                        emphasized: true,
+                      ),
+                      _MiniStat('كل الإشعارات', '${data.length}'),
+                    ],
                   ),
+                  const SizedBox(height: 16),
+                  SegmentedButton<bool>(
+                    segments: [
+                      const ButtonSegment(value: false, label: Text('الكل')),
+                      ButtonSegment(
+                        value: true,
+                        label: Text('غير مقروء (${unread.length})'),
+                      ),
+                    ],
+                    selected: {unreadOnly},
+                    onSelectionChanged: (value) =>
+                        setState(() => unreadOnly = value.first),
+                  ),
+                  const SizedBox(height: 16),
+                  if (visible.isEmpty)
+                    const StatusSurface(
+                      title: 'مفيش إشعارات هنا',
+                      message: 'التحديثات الجديدة هتظهر في المكان ده.',
+                      icon: Icons.notifications_none_rounded,
+                    )
+                  else
+                    ...visible.map(
+                      (n) => _NotificationCard(
+                        notification: n,
+                        onTap: () => perform(context, () async {
+                          if (n['read_at'] == null) {
+                            await market.db
+                                .from('customer_notifications')
+                                .update({
+                                  'read_at': DateTime.now()
+                                      .toUtc()
+                                      .toIso8601String(),
+                                })
+                                .eq('id', n['id'])
+                                .eq('user_id', market.user!.id);
+                            if (mounted) setState(() => revision++);
+                          }
+                          if (context.mounted && n['order_id'] != null) {
+                            await open(
+                              context,
+                              OrdersPage(orderId: '${n['order_id']}'),
+                            );
+                          }
+                        }),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
-    actions: [
-      if (market.user != null)
-        IconButton(
-          tooltip: 'تحديد الكل كمقروء',
-          onPressed: () => perform(context, () async {
-            await market.db
-                .from('customer_notifications')
-                .update({'read_at': DateTime.now().toUtc().toIso8601String()})
-                .eq('user_id', market.user!.id)
-                .isFilter('read_at', null);
-            if (mounted) setState(() => revision++);
-          }),
-          icon: const Icon(Icons.done_all),
-        ),
-    ],
   );
+}
+
+class _NotificationCard extends StatelessWidget {
+  final JsonMap notification;
+  final VoidCallback onTap;
+  const _NotificationCard({required this.notification, required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    final unread = notification['read_at'] == null;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      color: unread ? MarketColors.successSurface : MarketColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(17),
+        side: BorderSide(
+          color: unread ? MarketColors.primaryLight : MarketColors.divider,
+        ),
+      ),
+      child: ListTile(
+        minTileHeight: 92,
+        leading: _accountIcon(Icons.inventory_2_outlined),
+        title: Text(
+          '${notification['title'] ?? 'تحديث طلبك'}',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${notification['body'] ?? ''}'),
+            if (notification['order_id'] != null)
+              const Text(
+                'فتح تفاصيل الطلب',
+                style: TextStyle(
+                  color: MarketColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            Text(
+              displayDate(notification['created_at']),
+              style: const TextStyle(
+                fontSize: 10,
+                color: MarketColors.textTertiary,
+              ),
+            ),
+          ],
+        ),
+        trailing: unread
+            ? const Icon(Icons.circle, color: MarketColors.primary, size: 10)
+            : null,
+        onTap: onTap,
+      ),
+    );
+  }
 }
 
 class LoyaltyPage extends StatefulWidget {
@@ -1056,7 +1313,7 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
 
   @override
   Widget build(BuildContext context) => PageFrame(
-    'العضوية والنقاط',
+    'كوبونات الخصم',
     LoadView<List<dynamic>>(
       key: ValueKey(revision),
       load: () => Future.wait([
@@ -1066,82 +1323,440 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
       ]),
       builder: (data) {
         final card = row(data[0]);
+        final vouchers = rows(data[1]);
+        final active = vouchers
+            .where(
+              (v) =>
+                  '${v['status']}'.toLowerCase() == 'active' &&
+                  number(v['remaining_value_egp']) > 0,
+            )
+            .toList();
+        final previous = vouchers.where((v) => !active.contains(v)).toList();
         return ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
           children: [
-            panel(
-              Column(
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xff006b3c), Color(0xff00542f)],
+                ),
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x1f005931),
+                    blurRadius: 20,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  heading('${card['name'] ?? 'بطاقة المعداوي'}'),
-                  Text('رقم العضوية: ${card['membership_number']}'),
-                  const SizedBox(height: 16),
-                  if ('${card['barcode_token'] ?? ''}'.isNotEmpty)
-                    BarcodeWidget(
-                      barcode: Barcode.code128(),
-                      data: '${card['barcode_token']}',
-                      height: 90,
-                      drawText: false,
+                  const Text(
+                    '✦ نقاط المعداوي',
+                    style: TextStyle(
+                      color: Color(0xffc9ead8),
+                      fontWeight: FontWeight.w700,
                     ),
-                  heading('${card['points_balance']} نقطة'),
-                  Text('رصيد التحويل: ${money(card['redeemable_credit_egp'])}'),
+                  ),
+                  Text(
+                    '${card['points_balance'] ?? 0} نقطة',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 34,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    'كل ${card['redemption_points'] ?? '—'} نقطة = كوبون خصم بقيمة ${money(card['redemption_value_egp'] ?? 0)}',
+                    style: const TextStyle(
+                      color: Color(0xffd4eee0),
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .1),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'المتاح للتحويل الآن',
+                          style: TextStyle(
+                            color: Color(0xffc9ead8),
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          money(card['redeemable_credit_egp']),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
-            heading('تحويل النقاط لقسيمة'),
-            Text(
-              '${card['redemption_points']} نقطة = ${money(card['redemption_value_egp'])}',
-            ),
-            TextField(
-              controller: points,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'عدد النقاط'),
-            ),
-            ActionButton('إنشاء قسيمة خصم', () async {
-              final value = int.tryParse(points.text);
-              if (value == null || value <= 0) {
-                message(context, 'اكتب عدد نقاط صحيح');
-                return;
-              }
-              await market.rpc('create_loyalty_voucher', {'p_points': value});
-              if (mounted) setState(() => revision++);
-            }),
-            heading('قسائمي'),
-            ...rows(data[1]).map(
-              (v) => panel(
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 18),
+            _accountCard(
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SelectableText(
-                      '${v['voucher_code']}',
-                      style: const TextStyle(
+                    const Text(
+                      '🎁 حوّل نقاطك لكوبون خصم',
+                      style: TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    Text('المتبقي: ${money(v['remaining_value_egp'])}'),
-                    Text('${v['status']}'),
-                    if (v['barcode_token'] != null)
-                      BarcodeWidget(
-                        barcode: Barcode.code128(),
-                        data: '${v['barcode_token']}',
-                        height: 80,
-                        drawText: false,
+                    const SizedBox(height: 6),
+                    const Text(
+                      'اختر عدد نقاط بمضاعفات التحويل، والكوبون يظهر فور إنشائه ويظل رصيده محفوظًا.',
+                      style: TextStyle(
+                        color: MarketColors.textSecondary,
+                        fontSize: 12,
                       ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: points,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'عدد النقاط',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ActionButton('إنشاء كوبون خصم', () async {
+                      final value = int.tryParse(points.text);
+                      if (value == null || value <= 0) {
+                        message(context, 'اكتب عدد نقاط صحيح');
+                        return;
+                      }
+                      await market.rpc('create_loyalty_voucher', {
+                        'p_points': value,
+                      });
+                      if (mounted) setState(() => revision++);
+                    }),
                   ],
                 ),
               ),
             ),
-            heading('حركة النقاط'),
-            ...rows(data[2]).map(
-              (e) => ListTile(
-                title: Text('${e['reference'] ?? e['entry_type']}'),
-                subtitle: Text('${e['created_at']}'),
-                trailing: Text('${e['points_delta']}'),
+            const SizedBox(height: 20),
+            Text(
+              'كوبونات الخصم المتاحة  ${active.length}',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 10),
+            if (active.isEmpty)
+              const StatusSurface(
+                title: 'لا توجد كوبونات متاحة',
+                message: 'حوّل نقاطك إلى كوبون خصم ليظهر هنا.',
+                icon: Icons.confirmation_number_outlined,
+              )
+            else
+              ...active.map((v) => _VoucherCard(v)),
+            const SizedBox(height: 18),
+            Text(
+              'كوبونات خصم سابقة',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 10),
+            if (previous.isEmpty)
+              const Text(
+                'لا توجد كوبونات سابقة',
+                style: TextStyle(color: MarketColors.textSecondary),
+              )
+            else
+              ...previous.map((v) => _PreviousVoucherCard(v)),
+            const SizedBox(height: 18),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: const Text(
+                'حركة النقاط',
+                style: TextStyle(fontWeight: FontWeight.w700),
               ),
+              children: rows(data[2])
+                  .map(
+                    (e) => ListTile(
+                      title: Text('${e['reference'] ?? e['entry_type']}'),
+                      subtitle: Text(displayDate(e['created_at'])),
+                      trailing: Text(
+                        '${e['points_delta']}',
+                        style: const TextStyle(
+                          color: MarketColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
           ],
         );
       },
+    ),
+  );
+}
+
+class _VoucherCard extends StatelessWidget {
+  final JsonMap voucher;
+  const _VoucherCard(this.voucher);
+  @override
+  Widget build(BuildContext context) {
+    final barcode =
+        '${voucher['barcode_token'] ?? voucher['voucher_code'] ?? ''}';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: MarketColors.primarySurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: MarketColors.primaryLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: SelectableText(
+                  '${voucher['voucher_code']}',
+                  style: const TextStyle(
+                    color: MarketColors.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'متاح',
+                  style: TextStyle(color: MarketColors.success, fontSize: 11),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _OrderValue(
+                  'الرصيد المتبقي',
+                  money(voucher['remaining_value_egp']),
+                ),
+              ),
+              Expanded(
+                child: _OrderValue(
+                  'القيمة الأصلية',
+                  money(voucher['initial_value_egp'] ?? voucher['value_egp']),
+                ),
+              ),
+            ],
+          ),
+          if (barcode.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: BarcodeWidget(
+                barcode: Barcode.code128(),
+                data: barcode,
+                height: 92,
+                drawText: true,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'اعرض الباركود للكاشير أو اختر كوبون الخصم عند الدفع في التطبيق.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: MarketColors.textSecondary),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PreviousVoucherCard extends StatelessWidget {
+  final JsonMap voucher;
+  const _PreviousVoucherCard(this.voucher);
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.only(bottom: 10),
+    child: Padding(
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SelectableText(
+                  '${voucher['voucher_code']}',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  'القيمة الأصلية ${money(voucher['initial_value_egp'] ?? voucher['value_egp'])}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: MarketColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              const Text(
+                'تم استخدامه',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: MarketColors.textSecondary,
+                ),
+              ),
+              Text(
+                'متبقي ${money(voucher['remaining_value_egp'])}',
+                style: const TextStyle(fontSize: 11),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _FeatureIntro extends StatelessWidget {
+  final IconData icon;
+  final String title, subtitle;
+  final List<Widget> actions;
+  final List<Widget> stats;
+  const _FeatureIntro({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.actions = const [],
+    this.stats = const [],
+  });
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: MarketColors.primarySurface,
+      borderRadius: BorderRadius.circular(22),
+      border: Border.all(color: MarketColors.primaryLight),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: MarketColors.primary, size: 30),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: MarketColors.primary,
+                      fontSize: 23,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: MarketColors.textSecondary,
+                      height: 1.7,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        if (actions.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          Wrap(spacing: 10, runSpacing: 10, children: actions),
+        ],
+        if (stats.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: stats
+                .map(
+                  (s) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: s,
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+class _MiniStat extends StatelessWidget {
+  final String label, value;
+  final bool emphasized;
+  const _MiniStat(this.label, this.value, {this.emphasized = false});
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 13),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(15),
+    ),
+    child: Column(
+      children: [
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 10,
+            color: MarketColors.textSecondary,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 21,
+            fontWeight: FontWeight.w700,
+            color: emphasized ? MarketColors.primary : MarketColors.textPrimary,
+          ),
+        ),
+      ],
     ),
   );
 }
