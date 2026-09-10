@@ -1,0 +1,23 @@
+{
+  "reference_repository": "bodo2020/suq-arabi-mobile-market",
+  "reference_commit": "5caa03569ca48f236f54f57fae5e8121f088e4bb",
+  "sha256": {
+    "lib/core/design.dart": "74b729efacfc9ccc1836247436ea115ff3667ef9ec4ea3111ac534879d24ed97",
+    "lib/core/models.dart": "40e8b55dd753d3f856dfb08f876304f06b4059c30916b15724cd06deb51119e1",
+    "lib/core/store.dart": "7a354ce19bd9fa71fc3d169b59d1cc52f9147d28554ed914f773549204847b57",
+    "lib/core/ui.dart": "a2b6520dda38ac510a873cf45dd8904684cf00dcbd4029e9bfabcc77eb77766c",
+    "lib/main.dart": "184d0609a860ef43303cc00877753c6e567dcbcd20bedc4029e7270489b56f63",
+    "lib/screens/account.dart": "58bf712daef8ad3f0a1d2fd3fbd8944534c7554af4d7c7887e9c87392286e73a",
+    "lib/screens/address.dart": "53b9f77000bf96c6eeaa6faf2bcee98599b37267c9c093f4895e781a0751c962",
+    "lib/screens/auth.dart": "04b84e2fc2fb65a2d376a1a98611e34375f3f009ecf0e95fc9258519480c8ce1",
+    "lib/screens/catalog.dart": "6e879e3ea84ae2a782ecf3fc84912a1f65ed6fff6c6979539b3f355dd10800be",
+    "lib/screens/checkout.dart": "6fa186555c197c36e2e4bec6beecda6cdc69af84726c85449eccab2f49f24eb0",
+    "lib/screens/returns.dart": "19ec62fa7df3b498f270ea8e13f68032c64a392600d1b817bcf1f716023381e9",
+    "test/checkout_test.dart": "cf34b89a6713eb963a4420e8e07578aa49ecc05329dbcccfee94bb7b2d86aee6",
+    "test/design_review_test.dart": "d4565448120f5007de4beb330757f83bd7ee5d628807c473e19bee64d5d2abc5",
+    "test/widget_test.dart": "7ac14a4c90269b1cc6ce4830eb425a43c7ed353224ee94743a66bd9993b5d3b6",
+    "assets/fonts/Cairo.ttf": "667c987182391c91f4e57a2f455b1794fb5e3ee6ca4ef3383e86bb690fa9c964",
+    "assets/fonts/OFL.txt": "a4554e1799d42e1405924b61eb0e0722ae1623b1f1f07f995348f96c496362a9",
+    "assets/logo.png": "9cbb6b60944a557447d0376a6aeb34f47b6b0787ce433864007569c35a84dabe"
+  }
+}
