@@ -1,0 +1,97 @@
+name: One-time Wire Checkout V2
+
+on:
+  push:
+    branches:
+      - work/sync-current-customer-20260910
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout work branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/sync-current-customer-20260910
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.8'
+          channel: stable
+          cache: true
+
+      - name: Patch V2 wiring
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'pattern not found in {path}: {old[:80]!r}')
+              p.write_text(text.replace(old, new, 1))
+
+          # Store: allow checkout UI to own the displayed idempotency request id.
+          replace_once(
+              'lib/core/store.dart',
+              "    double? voucherAmount,\n  }) async {",
+              "    double? voucherAmount,\n    String? requestId,\n  }) async {",
+          )
+          replace_once(
+              'lib/core/store.dart',
+              "          'p_request_id': const Uuid().v4(),",
+              "          'p_request_id': requestId ?? const Uuid().v4(),",
+          )
+
+          # Central V2 route adapters.
+          replace_once(
+              'lib/core/ui.dart',
+              "Widget Function(BuildContext context, String id, bool bulk)? productPageBuilder;",
+              "Widget Function(BuildContext context, String id, bool bulk)? productPageBuilder;\nWidget Function(BuildContext context)? checkoutPageBuilder;\nWidget Function(BuildContext context, String? orderId)? ordersPageBuilder;",
+          )
+          replace_once(
+              'lib/core/ui.dart',
+              "  } else if (type == 'ProductPage' && productPageBuilder != null) {",
+              "  } else if (type == 'CheckoutPage' && checkoutPageBuilder != null) {\n    resolvedPage = checkoutPageBuilder!(context);\n  } else if (type == 'OrdersPage' && ordersPageBuilder != null) {\n    final dynamic legacy = page;\n    final value = legacy.orderId;\n    resolvedPage = ordersPageBuilder!(context, value == null ? null : '$value');\n  } else if (type == 'ProductPage' && productPageBuilder != null) {",
+          )
+
+          # Register V2 pages from main.
+          replace_once(
+              'lib/main.dart',
+              "import 'screens/notifications_v2.dart';",
+              "import 'screens/notifications_v2.dart';\nimport 'screens/checkout_v2.dart';\nimport 'screens/orders_v2.dart';",
+          )
+          replace_once(
+              'lib/main.dart',
+              "  productPageBuilder = (_, id, bulk) => ProductPageV2(id, bulk: bulk);",
+              "  productPageBuilder = (_, id, bulk) => ProductPageV2(id, bulk: bulk);\n  checkoutPageBuilder = (_) => const CheckoutV2Page();\n  ordersPageBuilder = (_, orderId) => OrdersPageV2(orderId: orderId);",
+          )
+
+          # StatusSurface uses a Widget action, not actionLabel/onAction.
+          replace_once(
+              'lib/screens/checkout_v2.dart',
+              "          actionLabel: 'ابدأ التسوق',\n          onAction: () => openShellTab(context, 0),",
+              "          action: FilledButton(\n            onPressed: () => openShellTab(context, 0),\n            child: const Text('ابدأ التسوق'),\n          ),",
+          )
+          PY
+
+          dart format lib/core/store.dart lib/core/ui.dart lib/main.dart lib/screens/checkout_v2.dart lib/screens/orders_v2.dart
+
+      - name: Commit wiring
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No changes needed."
+            exit 0
+          fi
+          git config user.name "bodo2020"
+          git config user.email "bodo2020@users.noreply.github.com"
+          git add lib/core/store.dart lib/core/ui.dart lib/main.dart lib/screens/checkout_v2.dart lib/screens/orders_v2.dart
+          git commit -m "feat: activate checkout and orders v2"
+          git push origin HEAD:work/sync-current-customer-20260910
