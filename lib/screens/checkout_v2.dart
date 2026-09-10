@@ -110,8 +110,9 @@ class _CheckoutV2PageState extends State<CheckoutV2Page> {
 
   double get voucherAmount {
     final saved = pending;
-    if (saved != null)
+    if (saved != null) {
       return number(saved['p_voucher_amount']).clamp(0, grossTotal);
+    }
     final voucher = selectedVoucher;
     if (voucher == null) return 0;
     return number(voucher['remaining_value_egp']).clamp(0, grossTotal);
@@ -574,8 +575,9 @@ class OrderSuccessV2Page extends StatelessWidget {
                         await Clipboard.setData(
                           const ClipboardData(text: _walletPhoneNumber),
                         );
-                        if (context.mounted)
+                        if (context.mounted) {
                           message(context, 'تم نسخ رقم المحفظة');
+                        }
                       },
                     ),
                   ],
@@ -918,8 +920,9 @@ class _OrderSummary extends StatelessWidget {
   String _amount(JsonMap item) {
     final quantity = number(item['quantity']);
     if ('${item['unit_of_measure']}' == 'weight') {
-      if (quantity >= 1000)
+      if (quantity >= 1000) {
         return '${(quantity / 1000).toStringAsFixed(2)} كجم';
+      }
       return '${quantity.round()} جم';
     }
     if (item['is_bulk'] == true) {
