@@ -8,6 +8,7 @@ import 'core/design.dart';
 import 'screens/categories_v2.dart';
 import 'screens/search_v2.dart';
 import 'screens/product_v2.dart';
+import 'screens/favorites_v2.dart';
 import 'screens/auth.dart';
 import 'screens/account_v2.dart';
 import 'screens/address.dart';
@@ -38,6 +39,8 @@ Future<void> main() async {
     await SharedPreferences.getInstance(),
   );
   notificationsPageBuilder = (_) => const NotificationsV2Page();
+  favoritesPageBuilder = (_) => const FavoritesV2Page();
+  productPageBuilder = (_, id, bulk) => ProductPageV2(id, bulk: bulk);
   runApp(const MarketApp());
   await market.start();
 }
