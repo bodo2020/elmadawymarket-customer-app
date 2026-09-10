@@ -274,9 +274,7 @@ class _CustomerSearchBar extends StatelessWidget {
           children: [
             Expanded(
               child: InkWell(
-                borderRadius: const BorderRadiusDirectional.horizontal(
-                  start: Radius.circular(14),
-                ),
+                borderRadius: BorderRadius.circular(14),
                 onTap: onSearch,
                 child: const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12),
