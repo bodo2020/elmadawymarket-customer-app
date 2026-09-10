@@ -309,8 +309,12 @@ class _OrdersBody extends StatelessWidget {
                 ? 'الطلبات المكتملة أو الملغاة ومشتريات الفرع هتظهر هنا.'
                 : 'أول ما تعمل طلب أونلاين هتقدر تتابعه من هنا خطوة بخطوة.',
             icon: Icons.shopping_bag_outlined,
-            actionLabel: previous ? null : 'تسوق الآن',
-            onAction: previous ? null : () => openShellTab(context, 0),
+            action: previous
+                ? null
+                : FilledButton(
+                    onPressed: () => openShellTab(context, 0),
+                    child: const Text('تسوق الآن'),
+                  ),
           )
         else
           ...visible.map(
