@@ -80,55 +80,77 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: market,
     builder: (context, _) => Scaffold(
-      appBar: AppBar(
-        leading: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Image.asset('assets/logo.png'),
-        ),
-        title: InkWell(
-          borderRadius: BorderRadius.circular(MarketRadius.large),
-          onTap: () =>
-              open(context, const CatalogPage(title: 'البحث', search: true)),
-          child: Container(
-            height: 52,
-            padding: const EdgeInsets.symmetric(horizontal: MarketSpace.md),
-            decoration: BoxDecoration(
-              color: MarketColors.surfaceSecondary,
-              borderRadius: BorderRadius.circular(MarketRadius.large),
-              border: Border.all(color: MarketColors.border),
-            ),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.search_rounded,
-                  size: 21,
-                  color: MarketColors.textSecondary,
-                ),
-                SizedBox(width: MarketSpace.sm),
-                Expanded(
-                  child: Text(
-                    'دور على منتج أو قسم…',
-                    style: TextStyle(fontSize: 13, color: Color(0xff7b817c)),
+      appBar: index == 3
+          ? AppBar(
+              centerTitle: true,
+              title: const Text('حسابي'),
+              actions: [
+                IconButton(
+                  tooltip: 'الإشعارات',
+                  onPressed: () => open(context, const NotificationsPage()),
+                  icon: const Icon(
+                    Icons.notifications_outlined,
+                    color: MarketColors.primary,
                   ),
                 ),
-                Icon(
-                  Icons.qr_code_scanner_rounded,
-                  size: 21,
-                  color: MarketColors.primary,
+              ],
+            )
+          : AppBar(
+              leading: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Image.asset('assets/logo.png'),
+              ),
+              title: InkWell(
+                borderRadius: BorderRadius.circular(MarketRadius.large),
+                onTap: () => open(
+                  context,
+                  const CatalogPage(title: 'البحث', search: true),
                 ),
+                child: Container(
+                  height: 52,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: MarketSpace.md,
+                  ),
+                  decoration: BoxDecoration(
+                    color: MarketColors.surfaceSecondary,
+                    borderRadius: BorderRadius.circular(MarketRadius.large),
+                    border: Border.all(color: MarketColors.border),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.search_rounded,
+                        size: 21,
+                        color: MarketColors.textSecondary,
+                      ),
+                      SizedBox(width: MarketSpace.sm),
+                      Expanded(
+                        child: Text(
+                          'دور على منتج أو قسم…',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xff7b817c),
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.qr_code_scanner_rounded,
+                        size: 21,
+                        color: MarketColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                if (market.user != null)
+                  IconButton(
+                    tooltip: 'الإشعارات',
+                    onPressed: () => open(context, const NotificationsPage()),
+                    icon: const Icon(Icons.notifications_outlined),
+                  ),
               ],
             ),
-          ),
-        ),
-        actions: [
-          if (market.user != null)
-            IconButton(
-              tooltip: 'الإشعارات',
-              onPressed: () => open(context, const NotificationsPage()),
-              icon: const Icon(Icons.notifications_outlined),
-            ),
-        ],
-      ),
       body: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
@@ -186,57 +208,64 @@ class _HomeShellState extends State<HomeShell> {
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: MarketColors.surface,
-            border: Border(top: BorderSide(color: MarketColors.divider)),
-            boxShadow: [
-              BoxShadow(
-                color: Color(0x0a000000),
-                blurRadius: 12,
-                offset: Offset(0, -2),
+        minimum: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              color: MarketColors.surface,
+              border: Border.fromBorderSide(
+                BorderSide(color: MarketColors.divider),
               ),
-            ],
-          ),
-          child: NavigationBar(
-            height: 72 + (MediaQuery.textScalerOf(context).scale(12) - 12) * 4,
-            selectedIndex: index,
-            onDestinationSelected: (value) => setState(() => index = value),
-            animationDuration: MediaQuery.disableAnimationsOf(context)
-                ? Duration.zero
-                : const Duration(milliseconds: 220),
-            destinations: [
-              const NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home_rounded),
-                label: 'الرئيسية',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.grid_view_outlined),
-                selectedIcon: Icon(Icons.grid_view_rounded),
-                label: 'الأقسام',
-              ),
-              NavigationDestination(
-                icon: Badge(
-                  isLabelVisible: market.cart.isNotEmpty,
-                  backgroundColor: MarketColors.discount,
-                  label: Text('${market.cart.length}'),
-                  child: const Icon(Icons.shopping_cart_outlined),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x16000000),
+                  blurRadius: 18,
+                  offset: Offset(0, 4),
                 ),
-                selectedIcon: Badge(
-                  isLabelVisible: market.cart.isNotEmpty,
-                  backgroundColor: MarketColors.discount,
-                  label: Text('${market.cart.length}'),
-                  child: const Icon(Icons.shopping_cart_rounded),
+              ],
+            ),
+            child: NavigationBar(
+              height:
+                  66 + (MediaQuery.textScalerOf(context).scale(12) - 12) * 4,
+              selectedIndex: index,
+              onDestinationSelected: (value) => setState(() => index = value),
+              animationDuration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 220),
+              destinations: [
+                const NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home_rounded),
+                  label: 'الرئيسية',
                 ),
-                label: 'السلة',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.person_outline_rounded),
-                selectedIcon: Icon(Icons.person_rounded),
-                label: 'حسابي',
-              ),
-            ],
+                const NavigationDestination(
+                  icon: Icon(Icons.grid_view_outlined),
+                  selectedIcon: Icon(Icons.grid_view_rounded),
+                  label: 'الأقسام',
+                ),
+                NavigationDestination(
+                  icon: Badge(
+                    isLabelVisible: market.cart.isNotEmpty,
+                    backgroundColor: MarketColors.discount,
+                    label: Text('${market.cart.length}'),
+                    child: const Icon(Icons.shopping_cart_outlined),
+                  ),
+                  selectedIcon: Badge(
+                    isLabelVisible: market.cart.isNotEmpty,
+                    backgroundColor: MarketColors.discount,
+                    label: Text('${market.cart.length}'),
+                    child: const Icon(Icons.shopping_cart_rounded),
+                  ),
+                  label: 'السلة',
+                ),
+                const NavigationDestination(
+                  icon: Icon(Icons.person_outline_rounded),
+                  selectedIcon: Icon(Icons.person_rounded),
+                  label: 'حسابي',
+                ),
+              ],
+            ),
           ),
         ),
       ),

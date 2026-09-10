@@ -9,134 +9,632 @@ import 'address.dart';
 import 'catalog.dart';
 import 'returns.dart';
 
-class AccountPage extends StatelessWidget {
+class AccountPage extends StatefulWidget {
   const AccountPage({super.key});
+
   @override
-  Widget build(BuildContext context) => market.user == null
-      ? ListView(
-          padding: const EdgeInsets.all(MarketSpace.xl),
-          children: [
-            heading('حسابك في المعداوي'),
-            const Text(
-              'سجّل دخولك لحفظ السلة والعناوين ومتابعة طلباتك ونقاطك.',
-            ),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: () => open(context, const AuthPage()),
-              child: const Text('تسجيل الدخول'),
-            ),
-          ],
-        )
-      : ListView(
-          key: const PageStorageKey('account'),
-          padding: const EdgeInsets.all(MarketSpace.md),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(MarketSpace.lg),
-              margin: const EdgeInsets.only(bottom: MarketSpace.sm),
-              decoration: BoxDecoration(
-                color: MarketColors.primarySurface,
-                borderRadius: BorderRadius.circular(MarketRadius.extraLarge),
-                border: Border.all(color: MarketColors.primaryLight),
+  State<AccountPage> createState() => _AccountPageState();
+}
+
+class _AccountPageState extends State<AccountPage> {
+  late Future<List<dynamic>> summary;
+
+  @override
+  void initState() {
+    super.initState();
+    summary = _loadSummary();
+  }
+
+  Future<List<dynamic>> _loadSummary() =>
+      Future.wait([market.rpc('get_my_loyalty_card'), market.addresses()]);
+
+  Future<void> _refresh() async {
+    setState(() => summary = _loadSummary());
+    await summary;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (market.user == null) {
+      return ListView(
+        padding: const EdgeInsets.all(MarketSpace.xl),
+        children: [
+          heading('حسابك في المعداوي'),
+          const Text('سجّل دخولك لحفظ السلة والعناوين ومتابعة طلباتك ونقاطك.'),
+          const SizedBox(height: 20),
+          FilledButton(
+            onPressed: () => open(context, const AuthPage()),
+            child: const Text('تسجيل الدخول'),
+          ),
+        ],
+      );
+    }
+
+    return FutureBuilder<List<dynamic>>(
+      future: summary,
+      builder: (context, snapshot) {
+        final card = snapshot.hasData
+            ? row(snapshot.data![0])
+            : <String, dynamic>{};
+        final addresses = snapshot.hasData
+            ? rows(snapshot.data![1])
+            : <JsonMap>[];
+        final defaultAddress = addresses.firstOrNull;
+        return RefreshIndicator(
+          onRefresh: _refresh,
+          child: ListView(
+            key: const PageStorageKey('account'),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
+            children: [
+              _ProfileSummaryCard(
+                name: '${market.profile?['name'] ?? 'حسابك'}',
+                phone: market.user!.phone ?? market.user!.email ?? '',
+                onEdit: () => open(context, const ProfilePage()),
               ),
-              child: Row(
+              const SizedBox(height: 18),
+              _LoyaltySummaryCard(
+                card: card,
+                loading: snapshot.connectionState != ConnectionState.done,
+                onOpen: () => open(context, const LoyaltyPage()),
+              ),
+              const SizedBox(height: 18),
+              _AddressSummaryCard(
+                address: defaultAddress,
+                onOpen: () => open(context, const AddressesPage()),
+              ),
+              const SizedBox(height: 18),
+              _AccountShortcuts(
+                onOrders: () => open(context, const OrdersPage()),
+                onVouchers: () => open(context, const LoyaltyPage()),
+                onFavorites: () => open(context, const FavoritesPage()),
+              ),
+              const SizedBox(height: 18),
+              _AccountMenu(
+                onNotifications: () => open(context, const NotificationsPage()),
+                onAddresses: () => open(context, const AddressesPage()),
+                onReturns: () => open(context, const ReturnsPage()),
+              ),
+              const SizedBox(height: 18),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: MarketColors.error,
+                  side: BorderSide(
+                    color: MarketColors.error.withValues(alpha: .18),
+                  ),
+                  backgroundColor: MarketColors.surface,
+                ),
+                onPressed: () async {
+                  await market.db.auth.signOut();
+                  await market.load();
+                },
+                icon: const Icon(Icons.logout_rounded, size: 19),
+                label: const Text('تسجيل الخروج'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ProfileSummaryCard extends StatelessWidget {
+  final String name, phone;
+  final VoidCallback onEdit;
+  const _ProfileSummaryCard({
+    required this.name,
+    required this.phone,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) => _accountCard(
+    Padding(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: MarketColors.primarySurface,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.person_outline_rounded,
+                  color: MarketColors.primary,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'حسابك في المعداوي',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: MarketColors.textTertiary,
+                      ),
+                    ),
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (phone.isNotEmpty)
+                      Text(
+                        phone,
+                        textDirection: TextDirection.ltr,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: MarketColors.textSecondary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('تعديل بياناتي'),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _LoyaltySummaryCard extends StatelessWidget {
+  final JsonMap card;
+  final bool loading;
+  final VoidCallback onOpen;
+  const _LoyaltySummaryCard({
+    required this.card,
+    required this.loading,
+    required this.onOpen,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final barcode =
+        '${card['barcode_token'] ?? card['membership_number'] ?? ''}';
+    final points = card['points_balance'] ?? 0;
+    final credit = card['redeemable_credit_egp'] ?? 0;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xff006c3d), Color(0xff00552f)],
+          begin: Alignment.topRight,
+          end: Alignment.bottomLeft,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x26005931),
+            blurRadius: 24,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.card_giftcard_rounded,
+                color: Color(0xffc9ead8),
+                size: 19,
+              ),
+              SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  'بطاقة المعداوي',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Color(0xffc9ead8), fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'نقاطك ومشترياتك في مكان واحد',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _LoyaltyMetric(
+                  label: 'رصيد النقاط',
+                  value: loading ? '—' : '$points',
+                  suffix: 'نقطة',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _LoyaltyMetric(
+                  label: 'قابل للتحويل لكوبون خصم',
+                  value: loading ? '—' : money(credit),
+                  suffix: 'رصيد متاح',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: MarketColors.primary,
+              minimumSize: const Size(48, 52),
+            ),
+            onPressed: onOpen,
+            icon: const Icon(Icons.confirmation_number_outlined, size: 18),
+            label: const Text('تحويل النقاط إلى كوبون خصم'),
+          ),
+          if (barcode.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
                 children: [
-                  const CircleAvatar(
-                    radius: 28,
-                    backgroundColor: MarketColors.primaryLight,
-                    child: Icon(
-                      Icons.person_outline_rounded,
-                      color: MarketColors.primary,
-                      size: 30,
+                  const Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      'امسح الباركود عند الكاشير',
+                      style: TextStyle(
+                        color: MarketColors.primary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'أهلًا بيك في المعداوي',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: MarketColors.textSecondary,
-                          ),
-                        ),
-                        Text(
-                          '${market.profile?['name'] ?? 'حسابك'}',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: MarketColors.textPrimary,
-                          ),
-                        ),
-                        Text(
-                          market.user!.phone ?? market.user!.email ?? '',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: MarketColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: 8),
+                  BarcodeWidget(
+                    barcode: Barcode.code128(),
+                    data: barcode,
+                    height: 76,
+                    drawText: true,
+                    style: const TextStyle(fontSize: 11, letterSpacing: 2),
                   ),
                 ],
               ),
             ),
-            if ('${market.profile?['name'] ?? ''}'.trim().isEmpty)
-              const Text('كمّل اسمك علشان تقدر تؤكد الطلب'),
-            const SectionHeader(
-              'إدارة حسابك',
-              subtitle: 'طلباتك، عناوينك ومزايا العضوية في مكان واحد',
+          ],
+          const SizedBox(height: 13),
+          Text(
+            '${card['redemption_points'] ?? '—'} نقطة = ${money(card['redemption_value_egp'] ?? 0)} خصم',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xffd4eee0),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
             ),
-            AccountLink(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('بيانات الحساب وكلمة المرور'),
-              onTap: () => open(context, const ProfilePage()),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoyaltyMetric extends StatelessWidget {
+  final String label, value, suffix;
+  const _LoyaltyMetric({
+    required this.label,
+    required this.value,
+    required this.suffix,
+  });
+  @override
+  Widget build(BuildContext context) => Container(
+    height:
+        112 +
+        (MediaQuery.textScalerOf(context).scale(14) - 14).clamp(0, 20) * 8,
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: .1),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          label,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: Color(0xffc9ead8), fontSize: 11),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        Text(
+          suffix,
+          style: const TextStyle(color: Color(0xffc9ead8), fontSize: 10),
+        ),
+      ],
+    ),
+  );
+}
+
+class _AddressSummaryCard extends StatelessWidget {
+  final JsonMap? address;
+  final VoidCallback onOpen;
+  const _AddressSummaryCard({required this.address, required this.onOpen});
+  @override
+  Widget build(BuildContext context) => _accountCard(
+    Padding(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              _accountIcon(Icons.location_on_outlined),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'العنوان الأساسي',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: MarketColors.primary,
+                      ),
+                    ),
+                    const Text(
+                      'عنوان التوصيل',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      '${address?['address'] ?? 'أضف عنوان التوصيل'}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: MarketColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: onOpen,
+            icon: const Icon(Icons.location_on_outlined, size: 18),
+            label: const Text('إدارة أو تغيير العنوان'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _AccountShortcuts extends StatelessWidget {
+  final VoidCallback onOrders, onVouchers, onFavorites;
+  const _AccountShortcuts({
+    required this.onOrders,
+    required this.onVouchers,
+    required this.onFavorites,
+  });
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final width = (box.maxWidth - 12) / 2;
+      return Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: [
+          SizedBox(
+            width: width,
+            child: _ShortcutCard(
+              icon: Icons.inventory_2_outlined,
+              title: 'مشترياتي',
+              subtitle: 'مشتريات الفرع وطلبات الأونلاين',
+              onTap: onOrders,
             ),
-            AccountLink(
-              leading: const Icon(Icons.location_on_outlined),
-              title: const Text('عناوين التوصيل'),
-              onTap: () => open(context, const AddressesPage()),
+          ),
+          SizedBox(
+            width: width,
+            child: _ShortcutCard(
+              icon: Icons.confirmation_number_outlined,
+              title: 'كوبوناتي',
+              subtitle: 'حوّل نقاطك لكوبون خصم',
+              onTap: onVouchers,
             ),
-            AccountLink(
-              leading: const Icon(Icons.shopping_bag_outlined),
-              title: const Text('مشترياتي وتتبع الطلبات'),
-              onTap: () => open(context, const OrdersPage()),
+          ),
+          SizedBox(
+            width: width,
+            child: _ShortcutCard(
+              icon: Icons.favorite_border_rounded,
+              title: 'المفضلة',
+              subtitle: 'منتجاتك المفضلة جاهزة للتسوق',
+              onTap: onFavorites,
             ),
-            AccountLink(
-              leading: const Icon(Icons.favorite_outline),
-              title: const Text('المفضلة'),
-              onTap: () => open(context, const FavoritesPage()),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+class _ShortcutCard extends StatelessWidget {
+  final IconData icon;
+  final String title, subtitle;
+  final VoidCallback onTap;
+  const _ShortcutCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(18),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        height:
+            164 +
+            (MediaQuery.textScalerOf(context).scale(14) - 14).clamp(0, 20) * 9,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: MarketColors.divider),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _accountIcon(icon),
+            const Spacer(),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
             ),
-            AccountLink(
-              leading: const Icon(Icons.card_giftcard),
-              title: const Text('بطاقة العضوية والنقاط والقسائم'),
-              onTap: () => open(context, const LoyaltyPage()),
-            ),
-            AccountLink(
-              leading: const Icon(Icons.assignment_return_outlined),
-              title: const Text('طلبات الاسترجاع'),
-              onTap: () => open(context, const ReturnsPage()),
-            ),
-            AccountLink(
-              leading: const Icon(Icons.notifications_outlined),
-              title: const Text('الإشعارات'),
-              onTap: () => open(context, const NotificationsPage()),
-            ),
-            const SizedBox(height: MarketSpace.sm),
-            ActionButton(
-              'تسجيل الخروج',
-              () async {
-                await market.db.auth.signOut();
-                await market.load();
-              },
-              icon: Icons.logout_rounded,
-              danger: true,
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 11,
+                height: 1.6,
+                color: MarketColors.textSecondary,
+              ),
             ),
           ],
-        );
+        ),
+      ),
+    ),
+  );
 }
+
+class _AccountMenu extends StatelessWidget {
+  final VoidCallback onNotifications, onAddresses, onReturns;
+  const _AccountMenu({
+    required this.onNotifications,
+    required this.onAddresses,
+    required this.onReturns,
+  });
+  @override
+  Widget build(BuildContext context) => _accountCard(
+    Column(
+      children: [
+        _AccountMenuRow(
+          icon: Icons.notifications_outlined,
+          title: 'الإشعارات',
+          subtitle: 'تابع تحديثات الطلب والدفع أول بأول',
+          onTap: onNotifications,
+        ),
+        const Divider(),
+        _AccountMenuRow(
+          icon: Icons.location_on_outlined,
+          title: 'عناوين التوصيل',
+          subtitle: 'ضيف عنوان أو اختار عنوانك الافتراضي',
+          onTap: onAddresses,
+        ),
+        const Divider(),
+        _AccountMenuRow(
+          icon: Icons.assignment_return_outlined,
+          title: 'طلبات الاسترجاع',
+          subtitle: 'راجع طلبات الاسترجاع وتابع حالتها',
+          onTap: onReturns,
+        ),
+      ],
+    ),
+  );
+}
+
+class _AccountMenuRow extends StatelessWidget {
+  final IconData icon;
+  final String title, subtitle;
+  final VoidCallback onTap;
+  const _AccountMenuRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+  @override
+  Widget build(BuildContext context) => ListTile(
+    minTileHeight: 78,
+    leading: _accountIcon(icon),
+    title: Text(
+      title,
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+    ),
+    subtitle: Text(
+      subtitle,
+      style: const TextStyle(fontSize: 11, color: MarketColors.textSecondary),
+    ),
+    trailing: const Icon(
+      Icons.chevron_left_rounded,
+      color: MarketColors.textTertiary,
+      size: 19,
+    ),
+    onTap: onTap,
+  );
+}
+
+Widget _accountCard(Widget child) => Container(
+  decoration: BoxDecoration(
+    color: MarketColors.surface,
+    borderRadius: BorderRadius.circular(22),
+    border: Border.all(color: MarketColors.divider),
+    boxShadow: const [
+      BoxShadow(color: Color(0x08000000), blurRadius: 16, offset: Offset(0, 6)),
+    ],
+  ),
+  child: child,
+);
+
+Widget _accountIcon(IconData icon) => Container(
+  width: 42,
+  height: 42,
+  decoration: BoxDecoration(
+    color: MarketColors.primarySurface,
+    borderRadius: BorderRadius.circular(13),
+  ),
+  child: Icon(icon, color: MarketColors.primary, size: 22),
+);
 
 class FavoritesPage extends StatelessWidget {
   const FavoritesPage({super.key});
