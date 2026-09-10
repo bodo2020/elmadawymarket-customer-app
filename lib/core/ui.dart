@@ -498,7 +498,7 @@ class StatusSurface extends StatelessWidget {
           ),
         ),
       ),
-    },
+    ),
   );
 }
 
