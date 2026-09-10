@@ -5,9 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/ui.dart';
 import 'core/design.dart';
-import 'screens/catalog.dart';
 import 'screens/categories_v2.dart';
 import 'screens/search_v2.dart';
+import 'screens/product_v2.dart';
 import 'screens/auth.dart';
 import 'screens/account_v2.dart';
 import 'screens/address.dart';
@@ -123,7 +123,7 @@ class _HomeShellState extends State<HomeShell> {
       titleSpacing: 4,
       title: _CustomerSearchBar(
         onSearch: () => open(context, const SearchV2Page()),
-        onBarcode: () => open(context, const ScannerPage()),
+        onBarcode: () => open(context, const ScannerV2Page()),
       ),
       actions: const [CustomerNotificationBellV2()],
     );
