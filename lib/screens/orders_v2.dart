@@ -57,7 +57,12 @@ class _OrdersPageV2State extends State<OrdersPageV2> {
   bool _isStore(JsonMap order) => '${order['source_channel']}' == 'store';
 
   bool _isPrevious(JsonMap order) =>
-      _isStore(order) || ['delivered', 'cancelled', 'store_completed'].contains('${order['status']}');
+      _isStore(order) ||
+      [
+        'delivered',
+        'cancelled',
+        'store_completed',
+      ].contains('${order['status']}');
 
   Future<void> refresh() async {
     if (fetching || market.user == null) return;
@@ -69,7 +74,9 @@ class _OrdersPageV2State extends State<OrdersPageV2> {
         data = result;
         error = null;
         if (widget.orderId != null) {
-          final target = result.where((e) => '${e['id']}' == widget.orderId).firstOrNull;
+          final target = result
+              .where((e) => '${e['id']}' == widget.orderId)
+              .firstOrNull;
           if (target != null) previous = _isPrevious(target);
         }
       });
@@ -82,26 +89,24 @@ class _OrdersPageV2State extends State<OrdersPageV2> {
 
   @override
   Widget build(BuildContext context) => PageFrame(
-        'مشترياتي',
-        market.user == null
-            ? _SignedOutOrders(
-                onLogin: () => open(context, const AuthPage()),
-              )
-            : data == null
-                ? const LoadingSurface()
-                : RefreshIndicator(
-                    onRefresh: refresh,
-                    child: _OrdersBody(
-                      orders: data!,
-                      previous: previous,
-                      targetOrderId: widget.orderId,
-                      error: error,
-                      fetching: fetching,
-                      onRefresh: refresh,
-                      onPreviousChanged: (value) => setState(() => previous = value),
-                    ),
-                  ),
-      );
+    'مشترياتي',
+    market.user == null
+        ? _SignedOutOrders(onLogin: () => open(context, const AuthPage()))
+        : data == null
+        ? const LoadingSurface()
+        : RefreshIndicator(
+            onRefresh: refresh,
+            child: _OrdersBody(
+              orders: data!,
+              previous: previous,
+              targetOrderId: widget.orderId,
+              error: error,
+              fetching: fetching,
+              onRefresh: refresh,
+              onPreviousChanged: (value) => setState(() => previous = value),
+            ),
+          ),
+  );
 }
 
 class _SignedOutOrders extends StatelessWidget {
@@ -110,39 +115,39 @@ class _SignedOutOrders extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView(
-        padding: const EdgeInsets.fromLTRB(24, 64, 24, 32),
-        children: [
-          Center(
-            child: Container(
-              width: 78,
-              height: 78,
-              decoration: BoxDecoration(
-                color: MarketColors.primarySurface,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: const Icon(
-                Icons.inventory_2_outlined,
-                size: 38,
-                color: MarketColors.primary,
-              ),
-            ),
+    padding: const EdgeInsets.fromLTRB(24, 64, 24, 32),
+    children: [
+      Center(
+        child: Container(
+          width: 78,
+          height: 78,
+          decoration: BoxDecoration(
+            color: MarketColors.primarySurface,
+            borderRadius: BorderRadius.circular(24),
           ),
-          const SizedBox(height: 18),
-          const Text(
-            'طلباتك محفوظة في حسابك',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+          child: const Icon(
+            Icons.inventory_2_outlined,
+            size: 38,
+            color: MarketColors.primary,
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'سجّل دخولك عشان تتابع طلبات التوصيل ومشتريات الفرع من مكان واحد.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: MarketColors.textSecondary, height: 1.6),
-          ),
-          const SizedBox(height: 22),
-          FilledButton(onPressed: onLogin, child: const Text('تسجيل الدخول')),
-        ],
-      );
+        ),
+      ),
+      const SizedBox(height: 18),
+      const Text(
+        'طلباتك محفوظة في حسابك',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+      ),
+      const SizedBox(height: 8),
+      const Text(
+        'سجّل دخولك عشان تتابع طلبات التوصيل ومشتريات الفرع من مكان واحد.',
+        textAlign: TextAlign.center,
+        style: TextStyle(color: MarketColors.textSecondary, height: 1.6),
+      ),
+      const SizedBox(height: 22),
+      FilledButton(onPressed: onLogin, child: const Text('تسجيل الدخول')),
+    ],
+  );
 }
 
 class _OrdersBody extends StatelessWidget {
@@ -166,7 +171,12 @@ class _OrdersBody extends StatelessWidget {
   bool _isStore(JsonMap order) => '${order['source_channel']}' == 'store';
 
   bool _isPrevious(JsonMap order) =>
-      _isStore(order) || ['delivered', 'cancelled', 'store_completed'].contains('${order['status']}');
+      _isStore(order) ||
+      [
+        'delivered',
+        'cancelled',
+        'store_completed',
+      ].contains('${order['status']}');
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +203,11 @@ class _OrdersBody extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.inventory_2_outlined, color: MarketColors.primary, size: 30),
+                  const Icon(
+                    Icons.inventory_2_outlined,
+                    color: MarketColors.primary,
+                    size: 30,
+                  ),
                   const SizedBox(width: 10),
                   const Expanded(
                     child: Column(
@@ -201,12 +215,19 @@ class _OrdersBody extends StatelessWidget {
                       children: [
                         Text(
                           'مشترياتك كلها',
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                         SizedBox(height: 4),
                         Text(
                           'تابع طلبات التوصيل لحظة بلحظة، وراجع فواتير الفرع المرتبطة بحسابك.',
-                          style: TextStyle(fontSize: 12, color: MarketColors.textSecondary, height: 1.55),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: MarketColors.textSecondary,
+                            height: 1.55,
+                          ),
                         ),
                       ],
                     ),
@@ -227,11 +248,21 @@ class _OrdersBody extends StatelessWidget {
               const SizedBox(height: 14),
               Row(
                 children: [
-                  Expanded(child: _Stat(label: 'جارية', value: '${current.length}', emphasized: true)),
+                  Expanded(
+                    child: _Stat(
+                      label: 'جارية',
+                      value: '${current.length}',
+                      emphasized: true,
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: _Stat(label: 'أونلاين', value: '$onlineCount')),
+                  Expanded(
+                    child: _Stat(label: 'أونلاين', value: '$onlineCount'),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: _Stat(label: 'من الفرع', value: '$storeCount')),
+                  Expanded(
+                    child: _Stat(label: 'من الفرع', value: '$storeCount'),
+                  ),
                 ],
               ),
             ],
@@ -240,7 +271,10 @@ class _OrdersBody extends StatelessWidget {
         const SizedBox(height: 14),
         SegmentedButton<bool>(
           segments: [
-            ButtonSegment(value: false, label: Text('الجارية (${current.length})')),
+            ButtonSegment(
+              value: false,
+              label: Text('الجارية (${current.length})'),
+            ),
             ButtonSegment(value: true, label: Text('السابقة (${old.length})')),
           ],
           selected: {previous},
@@ -256,7 +290,10 @@ class _OrdersBody extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.error_outline_rounded, color: MarketColors.error),
+                const Icon(
+                  Icons.error_outline_rounded,
+                  color: MarketColors.error,
+                ),
                 const SizedBox(width: 8),
                 Expanded(child: Text(friendlyError(error!))),
                 TextButton(onPressed: onRefresh, child: const Text('تحديث')),
@@ -307,7 +344,8 @@ class _OrderCardV2State extends State<_OrderCardV2> {
     final status = '${order['status'] ?? ''}';
     final items = _normalizeItems(order['items']);
     final meta = _statusMeta(status, online: online);
-    final identifier = '${order['invoice_number'] ?? order['tracking_number'] ?? order['id'] ?? ''}';
+    final identifier =
+        '${order['invoice_number'] ?? order['tracking_number'] ?? order['id'] ?? ''}';
     final payment = _paymentMethod('${order['payment_method'] ?? ''}');
     final paymentStatus = _paymentStatus('${order['payment_status'] ?? ''}');
 
@@ -318,7 +356,11 @@ class _OrderCardV2State extends State<_OrderCardV2> {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: MarketColors.divider),
         boxShadow: const [
-          BoxShadow(color: Color(0x09000000), blurRadius: 16, offset: Offset(0, 5)),
+          BoxShadow(
+            color: Color(0x09000000),
+            blurRadius: 16,
+            offset: Offset(0, 5),
+          ),
         ],
       ),
       child: ClipRRect(
@@ -337,31 +379,53 @@ class _OrderCardV2State extends State<_OrderCardV2> {
                       const Spacer(),
                       Text(
                         '${order['branch_name'] ?? 'المعداوي ماركت'}',
-                        style: const TextStyle(fontSize: 10, color: MarketColors.textTertiary),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: MarketColors.textTertiary,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 11),
                   Text(
                     online ? 'رقم الطلب' : 'رقم الفاتورة',
-                    style: const TextStyle(fontSize: 10, color: MarketColors.textTertiary),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: MarketColors.textTertiary,
+                    ),
                   ),
                   SelectableText(
                     '#$identifier',
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     displayDate(order['created_at']),
-                    style: const TextStyle(fontSize: 10, color: MarketColors.textSecondary),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: MarketColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _StatusCard(meta: meta),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: _OrderMetric(label: 'الإجمالي', value: money(order['total']))),
-                      Expanded(child: _OrderMetric(label: 'المنتجات', value: '${items.length}')),
+                      Expanded(
+                        child: _OrderMetric(
+                          label: 'الإجمالي',
+                          value: money(order['total']),
+                        ),
+                      ),
+                      Expanded(
+                        child: _OrderMetric(
+                          label: 'المنتجات',
+                          value: '${items.length}',
+                        ),
+                      ),
                     ],
                   ),
                   if (items.isNotEmpty) ...[
@@ -371,15 +435,23 @@ class _OrderCardV2State extends State<_OrderCardV2> {
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     onPressed: () => setState(() => expanded = !expanded),
-                    icon: Icon(expanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded),
-                    label: Text(expanded ? 'إخفاء التفاصيل' : 'عرض تفاصيل الطلب'),
+                    icon: Icon(
+                      expanded
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                    ),
+                    label: Text(
+                      expanded ? 'إخفاء التفاصيل' : 'عرض تفاصيل الطلب',
+                    ),
                   ),
                 ],
               ),
             ),
             AnimatedCrossFade(
               duration: const Duration(milliseconds: 220),
-              crossFadeState: expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              crossFadeState: expanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
               firstChild: const SizedBox.shrink(),
               secondChild: Container(
                 color: MarketColors.surfaceSecondary,
@@ -388,14 +460,23 @@ class _OrderCardV2State extends State<_OrderCardV2> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (online) ...[
-                      const _DetailsTitle(icon: Icons.route_outlined, text: 'تتبع الطلب'),
+                      const _DetailsTitle(
+                        icon: Icons.route_outlined,
+                        text: 'تتبع الطلب',
+                      ),
                       const SizedBox(height: 10),
                       status == 'cancelled'
                           ? const _CancelledNotice()
-                          : OrderTimelineV2(status: status, orderId: '${order['id']}'),
+                          : OrderTimelineV2(
+                              status: status,
+                              orderId: '${order['id']}',
+                            ),
                       const SizedBox(height: 16),
                     ],
-                    const _DetailsTitle(icon: Icons.receipt_long_outlined, text: 'بيانات الطلب'),
+                    const _DetailsTitle(
+                      icon: Icons.receipt_long_outlined,
+                      text: 'بيانات الطلب',
+                    ),
                     const SizedBox(height: 8),
                     if ('${order['shipping_address'] ?? ''}'.trim().isNotEmpty)
                       _DetailRow(
@@ -407,7 +488,9 @@ class _OrderCardV2State extends State<_OrderCardV2> {
                       _DetailRow(
                         icon: Icons.credit_card_outlined,
                         label: 'طريقة الدفع',
-                        value: paymentStatus.isEmpty ? payment : '$payment · $paymentStatus',
+                        value: paymentStatus.isEmpty
+                            ? payment
+                            : '$payment · $paymentStatus',
                       ),
                     if ('${order['delivery_person'] ?? ''}'.trim().isNotEmpty)
                       _DetailRow(
@@ -426,7 +509,11 @@ class _OrderCardV2State extends State<_OrderCardV2> {
                     const SizedBox(height: 12),
                     if (number(order['shipping_cost']) > 0)
                       _SummaryLine('التوصيل', money(order['shipping_cost'])),
-                    _SummaryLine('الإجمالي', money(order['total']), emphasized: true),
+                    _SummaryLine(
+                      'الإجمالي',
+                      money(order['total']),
+                      emphasized: true,
+                    ),
                     if (online && status == 'delivered') ...[
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
@@ -435,7 +522,8 @@ class _OrderCardV2State extends State<_OrderCardV2> {
                         label: const Text('طلب استرجاع'),
                       ),
                     ],
-                    if (!online || ['delivered', 'cancelled'].contains(status)) ...[
+                    if (!online ||
+                        ['delivered', 'cancelled'].contains(status)) ...[
                       const SizedBox(height: 8),
                       FilledButton.tonalIcon(
                         onPressed: () => openShellTab(context, 0),
@@ -457,7 +545,11 @@ class _OrderCardV2State extends State<_OrderCardV2> {
 class OrderTimelineV2 extends StatelessWidget {
   final String status;
   final String orderId;
-  const OrderTimelineV2({super.key, required this.status, required this.orderId});
+  const OrderTimelineV2({
+    super.key,
+    required this.status,
+    required this.orderId,
+  });
 
   static const stages = [
     'pending',
@@ -494,7 +586,9 @@ class OrderTimelineV2 extends StatelessWidget {
   }
 
   String _historyDate(List<JsonMap> history, String stage) {
-    final match = history.where((e) => '${e['new_status']}' == stage).firstOrNull;
+    final match = history
+        .where((e) => '${e['new_status']}' == stage)
+        .firstOrNull;
     return match == null ? '' : displayDate(match['created_at']);
   }
 }
@@ -515,52 +609,62 @@ class _TimelineStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SizedBox(
-              width: 30,
-              child: Column(
-                children: [
-                  Icon(
-                    active ? Icons.check_circle_rounded : Icons.circle_outlined,
-                    size: current ? 24 : 20,
-                    color: active ? MarketColors.success : MarketColors.textTertiary,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          width: 30,
+          child: Column(
+            children: [
+              Icon(
+                active ? Icons.check_circle_rounded : Icons.circle_outlined,
+                size: current ? 24 : 20,
+                color: active
+                    ? MarketColors.success
+                    : MarketColors.textTertiary,
+              ),
+              if (!last)
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    margin: const EdgeInsets.symmetric(vertical: 3),
+                    color: active ? MarketColors.success : MarketColors.divider,
                   ),
-                  if (!last)
-                    Expanded(
-                      child: Container(
-                        width: 2,
-                        margin: const EdgeInsets.symmetric(vertical: 3),
-                        color: active ? MarketColors.success : MarketColors.divider,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 13),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontWeight: current ? FontWeight.w800 : FontWeight.w600,
-                        color: active ? MarketColors.textPrimary : MarketColors.textTertiary,
-                      ),
-                    ),
-                    if (date.isNotEmpty)
-                      Text(date, style: const TextStyle(fontSize: 10, color: MarketColors.textSecondary)),
-                  ],
                 ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
-      );
+        const SizedBox(width: 8),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 13),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: current ? FontWeight.w800 : FontWeight.w600,
+                    color: active
+                        ? MarketColors.textPrimary
+                        : MarketColors.textTertiary,
+                  ),
+                ),
+                if (date.isNotEmpty)
+                  Text(
+                    date,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: MarketColors.textSecondary,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _StatusMeta {
@@ -582,70 +686,70 @@ _StatusMeta _statusMeta(String status, {required bool online}) {
   }
   return switch (status) {
     'pending' => const _StatusMeta(
-        'تم استلام الطلب',
-        'وصلنا طلبك وبنراجعه دلوقتي.',
-        MarketColors.warning,
-        Icons.schedule_rounded,
-      ),
+      'تم استلام الطلب',
+      'وصلنا طلبك وبنراجعه دلوقتي.',
+      MarketColors.warning,
+      Icons.schedule_rounded,
+    ),
     'confirmed' => const _StatusMeta(
-        'تم تأكيد الطلب',
-        'طلبك اتأكد وداخل على مرحلة التجهيز.',
-        MarketColors.info,
-        Icons.verified_outlined,
-      ),
+      'تم تأكيد الطلب',
+      'طلبك اتأكد وداخل على مرحلة التجهيز.',
+      MarketColors.info,
+      Icons.verified_outlined,
+    ),
     'preparing' => const _StatusMeta(
-        'جاري التجهيز',
-        'بنجهز منتجات طلبك بعناية.',
-        Color(0xFF7C3AED),
-        Icons.inventory_2_outlined,
-      ),
+      'جاري التجهيز',
+      'بنجهز منتجات طلبك بعناية.',
+      Color(0xFF7C3AED),
+      Icons.inventory_2_outlined,
+    ),
     'ready' => const _StatusMeta(
-        'الطلب جاهز',
-        'طلبك جاهز ومستني يخرج للتوصيل.',
-        Color(0xFF0284C7),
-        Icons.shopping_bag_outlined,
-      ),
+      'الطلب جاهز',
+      'طلبك جاهز ومستني يخرج للتوصيل.',
+      Color(0xFF0284C7),
+      Icons.shopping_bag_outlined,
+    ),
     'shipped' => const _StatusMeta(
-        'في الطريق إليك',
-        'طلبك خرج للتوصيل وهو في الطريق.',
-        Color(0xFF4F46E5),
-        Icons.local_shipping_outlined,
-      ),
+      'في الطريق إليك',
+      'طلبك خرج للتوصيل وهو في الطريق.',
+      Color(0xFF4F46E5),
+      Icons.local_shipping_outlined,
+    ),
     'delivered' => const _StatusMeta(
-        'تم التسليم',
-        'تم توصيل طلبك بنجاح.',
-        MarketColors.success,
-        Icons.check_circle_outline_rounded,
-      ),
+      'تم التسليم',
+      'تم توصيل طلبك بنجاح.',
+      MarketColors.success,
+      Icons.check_circle_outline_rounded,
+    ),
     'cancelled' => const _StatusMeta(
-        'تم إلغاء الطلب',
-        'الطلب اتلغى ولن يتم توصيله.',
-        MarketColors.error,
-        Icons.cancel_outlined,
-      ),
+      'تم إلغاء الطلب',
+      'الطلب اتلغى ولن يتم توصيله.',
+      MarketColors.error,
+      Icons.cancel_outlined,
+    ),
     _ => _StatusMeta(
-        statusLabels[status] ?? (status.isEmpty ? 'حالة الطلب' : status),
-        'يتم تحديث حالة الطلب أول بأول.',
-        MarketColors.textSecondary,
-        Icons.info_outline_rounded,
-      ),
+      statusLabels[status] ?? (status.isEmpty ? 'حالة الطلب' : status),
+      'يتم تحديث حالة الطلب أول بأول.',
+      MarketColors.textSecondary,
+      Icons.info_outline_rounded,
+    ),
   };
 }
 
 String _paymentMethod(String method) => switch (method) {
-      'cash' || 'cod' => 'الدفع عند الاستلام',
-      'wallet' => 'محفظة إلكترونية',
-      'card' => 'بطاقة بنكية',
-      _ => method.isEmpty ? 'غير محدد' : method,
-    };
+  'cash' || 'cod' => 'الدفع عند الاستلام',
+  'wallet' => 'محفظة إلكترونية',
+  'card' => 'بطاقة بنكية',
+  _ => method.isEmpty ? 'غير محدد' : method,
+};
 
 String _paymentStatus(String status) => switch (status) {
-      'pending' => 'بانتظار الدفع',
-      'paid' => 'مدفوع',
-      'failed' => 'فشل الدفع',
-      'refunded' => 'تم رد المبلغ',
-      _ => status,
-    };
+  'pending' => 'بانتظار الدفع',
+  'paid' => 'مدفوع',
+  'failed' => 'فشل الدفع',
+  'refunded' => 'تم رد المبلغ',
+  _ => status,
+};
 
 List<JsonMap> _normalizeItems(dynamic value) =>
     value is Map ? value.values.map(row).toList() : rows(value);
@@ -656,29 +760,38 @@ class _StatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          color: meta.color.withValues(alpha: .08),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: meta.color.withValues(alpha: .12)),
-        ),
-        child: Row(
-          children: [
-            Icon(meta.icon, color: meta.color),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(meta.label, style: TextStyle(color: meta.color, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 2),
-                  Text(meta.description, style: TextStyle(color: meta.color, fontSize: 10, height: 1.4)),
-                ],
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(
+      color: meta.color.withValues(alpha: .08),
+      borderRadius: BorderRadius.circular(15),
+      border: Border.all(color: meta.color.withValues(alpha: .12)),
+    ),
+    child: Row(
+      children: [
+        Icon(meta.icon, color: meta.color),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                meta.label,
+                style: TextStyle(
+                  color: meta.color,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              Text(
+                meta.description,
+                style: TextStyle(color: meta.color, fontSize: 10, height: 1.4),
+              ),
+            ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class _SourceBadge extends StatelessWidget {
@@ -687,31 +800,31 @@ class _SourceBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: online ? MarketColors.infoSurface : MarketColors.primarySurface,
-          borderRadius: BorderRadius.circular(20),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: online ? MarketColors.infoSurface : MarketColors.primarySurface,
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          online ? Icons.local_shipping_outlined : Icons.storefront_outlined,
+          size: 16,
+          color: online ? MarketColors.info : MarketColors.primary,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              online ? Icons.local_shipping_outlined : Icons.storefront_outlined,
-              size: 16,
-              color: online ? MarketColors.info : MarketColors.primary,
-            ),
-            const SizedBox(width: 5),
-            Text(
-              online ? 'طلب أونلاين' : 'شراء من الفرع',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: online ? MarketColors.info : MarketColors.primary,
-              ),
-            ),
-          ],
+        const SizedBox(width: 5),
+        Text(
+          online ? 'طلب أونلاين' : 'شراء من الفرع',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: online ? MarketColors.info : MarketColors.primary,
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class _OrderMetric extends StatelessWidget {
@@ -721,13 +834,22 @@ class _OrderMetric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 10, color: MarketColors.textTertiary)),
-          const SizedBox(height: 2),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w800, color: MarketColors.primary)),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(fontSize: 10, color: MarketColors.textTertiary),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        value,
+        style: const TextStyle(
+          fontWeight: FontWeight.w800,
+          color: MarketColors.primary,
+        ),
+      ),
+    ],
+  );
 }
 
 class _ProductStrip extends StatelessWidget {
@@ -736,14 +858,14 @@ class _ProductStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        height: 58,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: items.length.clamp(0, 8),
-          separatorBuilder: (_, _) => const SizedBox(width: 7),
-          itemBuilder: (_, index) => _ProductImage(item: items[index], size: 56),
-        ),
-      );
+    height: 58,
+    child: ListView.separated(
+      scrollDirection: Axis.horizontal,
+      itemCount: items.length.clamp(0, 8),
+      separatorBuilder: (_, _) => const SizedBox(width: 7),
+      itemBuilder: (_, index) => _ProductImage(item: items[index], size: 56),
+    ),
+  );
 }
 
 class _ProductImage extends StatelessWidget {
@@ -755,9 +877,10 @@ class _ProductImage extends StatelessWidget {
     final product = item['product'] is Map
         ? row(item['product'])
         : item['products'] is Map
-            ? row(item['products'])
-            : <String, dynamic>{};
-    final direct = item['image_url'] ??
+        ? row(item['products'])
+        : <String, dynamic>{};
+    final direct =
+        item['image_url'] ??
         item['product_image_url'] ??
         item['thumbnail_url'] ??
         item['image'] ??
@@ -770,19 +893,19 @@ class _ProductImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: MarketColors.surface,
-          borderRadius: BorderRadius.circular(13),
-          border: Border.all(color: MarketColors.divider),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(9),
-          child: photo(imageUrl, width: size - 8, height: size - 8),
-        ),
-      );
+    width: size,
+    height: size,
+    padding: const EdgeInsets.all(4),
+    decoration: BoxDecoration(
+      color: MarketColors.surface,
+      borderRadius: BorderRadius.circular(13),
+      border: Border.all(color: MarketColors.divider),
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(9),
+      child: photo(imageUrl, width: size - 8, height: size - 8),
+    ),
+  );
 }
 
 class _ItemsSection extends StatelessWidget {
@@ -791,82 +914,115 @@ class _ItemsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: MarketColors.surface,
-          borderRadius: BorderRadius.circular(16),
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: MarketColors.surface,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'المنتجات (${items.length})',
+          style: const TextStyle(fontWeight: FontWeight.w800),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('المنتجات (${items.length})', style: const TextStyle(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 8),
-            if (items.isEmpty)
-              const Text('تفاصيل المنتجات غير متاحة لهذا الطلب.', style: TextStyle(color: MarketColors.textSecondary))
-            else
-              ...items.map((item) {
-                final quantity = number(item['quantity']);
-                final unit = '${item['unit_of_measure']}';
-                final amount = unit == 'weight'
-                    ? quantity >= 1000
-                        ? '${(quantity / 1000).toStringAsFixed(2)} كجم'
-                        : '${quantity.round()} جم'
-                    : '${quantity.round()} ${item['is_bulk'] == true ? 'عبوة' : 'قطعة'}';
-                final total = number(item['total']) > 0
-                    ? number(item['total'])
-                    : quantity * number(item['price']) / (unit == 'weight' ? 1000 : 1);
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 7),
-                  child: Row(
-                    children: [
-                      _ProductImage(item: item, size: 50),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('${item['name'] ?? 'منتج'}', style: const TextStyle(fontWeight: FontWeight.w700)),
-                            Text(amount, style: const TextStyle(fontSize: 10, color: MarketColors.textSecondary)),
-                          ],
+        const SizedBox(height: 8),
+        if (items.isEmpty)
+          const Text(
+            'تفاصيل المنتجات غير متاحة لهذا الطلب.',
+            style: TextStyle(color: MarketColors.textSecondary),
+          )
+        else
+          ...items.map((item) {
+            final quantity = number(item['quantity']);
+            final unit = '${item['unit_of_measure']}';
+            final amount = unit == 'weight'
+                ? quantity >= 1000
+                      ? '${(quantity / 1000).toStringAsFixed(2)} كجم'
+                      : '${quantity.round()} جم'
+                : '${quantity.round()} ${item['is_bulk'] == true ? 'عبوة' : 'قطعة'}';
+            final total = number(item['total']) > 0
+                ? number(item['total'])
+                : quantity *
+                      number(item['price']) /
+                      (unit == 'weight' ? 1000 : 1);
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 7),
+              child: Row(
+                children: [
+                  _ProductImage(item: item, size: 50),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${item['name'] ?? 'منتج'}',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
-                      ),
-                      Text(money(total), style: const TextStyle(fontWeight: FontWeight.w700, color: MarketColors.primary)),
-                    ],
+                        Text(
+                          amount,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: MarketColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              }),
-          ],
-        ),
-      );
+                  Text(
+                    money(total),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: MarketColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+      ],
+    ),
+  );
 }
 
 class _DetailRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _DetailRow({required this.icon, required this.label, required this.value});
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 7),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 19, color: MarketColors.textTertiary),
-            const SizedBox(width: 9),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: const TextStyle(fontSize: 10, color: MarketColors.textTertiary)),
-                  const SizedBox(height: 2),
-                  Text(value, style: const TextStyle(height: 1.5)),
-                ],
+    padding: const EdgeInsets.symmetric(vertical: 7),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 19, color: MarketColors.textTertiary),
+        const SizedBox(width: 9),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: MarketColors.textTertiary,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 2),
+              Text(value, style: const TextStyle(height: 1.5)),
+            ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }
 
 class _DetailsTitle extends StatelessWidget {
@@ -876,12 +1032,12 @@ class _DetailsTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        children: [
-          Icon(icon, size: 20, color: MarketColors.primary),
-          const SizedBox(width: 7),
-          Text(text, style: const TextStyle(fontWeight: FontWeight.w800)),
-        ],
-      );
+    children: [
+      Icon(icon, size: 20, color: MarketColors.primary),
+      const SizedBox(width: 7),
+      Text(text, style: const TextStyle(fontWeight: FontWeight.w800)),
+    ],
+  );
 }
 
 class _SummaryLine extends StatelessWidget {
@@ -892,21 +1048,28 @@ class _SummaryLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            Expanded(child: Text(label, style: TextStyle(fontWeight: emphasized ? FontWeight.w800 : FontWeight.w500))),
-            Text(
-              value,
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: emphasized ? 16 : 13,
-                color: emphasized ? MarketColors.primary : MarketColors.textPrimary,
-              ),
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: emphasized ? FontWeight.w800 : FontWeight.w500,
             ),
-          ],
+          ),
         ),
-      );
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: emphasized ? 16 : 13,
+            color: emphasized ? MarketColors.primary : MarketColors.textPrimary,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _CancelledNotice extends StatelessWidget {
@@ -914,45 +1077,55 @@ class _CancelledNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-          color: MarketColors.errorSurface,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: const Text(
-          'تم إلغاء الطلب. لو محتاج مساعدة تواصل مع خدمة العملاء.',
-          style: TextStyle(color: MarketColors.error, fontSize: 12, height: 1.5),
-        ),
-      );
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(
+      color: MarketColors.errorSurface,
+      borderRadius: BorderRadius.circular(14),
+    ),
+    child: const Text(
+      'تم إلغاء الطلب. لو محتاج مساعدة تواصل مع خدمة العملاء.',
+      style: TextStyle(color: MarketColors.error, fontSize: 12, height: 1.5),
+    ),
+  );
 }
 
 class _Stat extends StatelessWidget {
   final String label;
   final String value;
   final bool emphasized;
-  const _Stat({required this.label, required this.value, this.emphasized = false});
+  const _Stat({
+    required this.label,
+    required this.value,
+    this.emphasized = false,
+  });
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: MarketColors.surface,
-          borderRadius: BorderRadius.circular(14),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: MarketColors.surface,
+      borderRadius: BorderRadius.circular(14),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: MarketColors.textSecondary,
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(fontSize: 10, color: MarketColors.textSecondary)),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: emphasized ? MarketColors.primary : MarketColors.textPrimary,
-              ),
-            ),
-          ],
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: emphasized ? MarketColors.primary : MarketColors.textPrimary,
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }

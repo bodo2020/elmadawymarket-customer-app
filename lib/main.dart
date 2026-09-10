@@ -15,6 +15,8 @@ import 'screens/address.dart';
 import 'screens/home_v2.dart';
 import 'screens/cart_v2.dart';
 import 'screens/notifications_v2.dart';
+import 'screens/checkout_v2.dart';
+import 'screens/orders_v2.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +43,8 @@ Future<void> main() async {
   notificationsPageBuilder = (_) => const NotificationsV2Page();
   favoritesPageBuilder = (_) => const FavoritesV2Page();
   productPageBuilder = (_, id, bulk) => ProductPageV2(id, bulk: bulk);
+  checkoutPageBuilder = (_) => const CheckoutV2Page();
+  ordersPageBuilder = (_, orderId) => OrdersPageV2(orderId: orderId);
   runApp(const MarketApp());
   await market.start();
 }
@@ -266,55 +270,55 @@ class _CustomerSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        height: 48,
-        decoration: BoxDecoration(
-          color: MarketColors.surfaceSecondary,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: MarketColors.border),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: onSearch,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.search_rounded,
-                        size: 20,
-                        color: MarketColors.textTertiary,
-                      ),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'دور على منتج أو قسم…',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: MarketColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ],
+    height: 48,
+    decoration: BoxDecoration(
+      color: MarketColors.surfaceSecondary,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: MarketColors.border),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: onSearch,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.search_rounded,
+                    size: 20,
+                    color: MarketColors.textTertiary,
                   ),
-                ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'دور على منتج أو قسم…',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: MarketColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Container(width: 1, height: 28, color: MarketColors.border),
-            IconButton(
-              tooltip: 'البحث بالباركود',
-              onPressed: onBarcode,
-              icon: const Icon(
-                Icons.qr_code_scanner_rounded,
-                size: 20,
-                color: MarketColors.primary,
-              ),
-            ),
-          ],
+          ),
         ),
-      );
+        Container(width: 1, height: 28, color: MarketColors.border),
+        IconButton(
+          tooltip: 'البحث بالباركود',
+          onPressed: onBarcode,
+          icon: const Icon(
+            Icons.qr_code_scanner_rounded,
+            size: 20,
+            color: MarketColors.primary,
+          ),
+        ),
+      ],
+    ),
+  );
 }

@@ -80,7 +80,8 @@ class _CheckoutV2PageState extends State<CheckoutV2Page> {
       final items = saved == null
           ? checkoutLines(market.cart)
           : rows(saved['p_items']);
-      final addressId = '${saved?['p_address_id'] ?? market.address?['id'] ?? ''}';
+      final addressId =
+          '${saved?['p_address_id'] ?? market.address?['id'] ?? ''}';
       if (items.isEmpty) throw StateError('INVALID_CART');
       if (addressId.isEmpty) throw StateError('ADDRESS_REQUIRED');
 
@@ -109,7 +110,8 @@ class _CheckoutV2PageState extends State<CheckoutV2Page> {
 
   double get voucherAmount {
     final saved = pending;
-    if (saved != null) return number(saved['p_voucher_amount']).clamp(0, grossTotal);
+    if (saved != null)
+      return number(saved['p_voucher_amount']).clamp(0, grossTotal);
     final voucher = selectedVoucher;
     if (voucher == null) return 0;
     return number(voucher['remaining_value_egp']).clamp(0, grossTotal);
@@ -126,7 +128,8 @@ class _CheckoutV2PageState extends State<CheckoutV2Page> {
     return value.isEmpty ? null : value;
   }
 
-  double get payableTotal => (grossTotal - voucherAmount).clamp(0, double.infinity);
+  double get payableTotal =>
+      (grossTotal - voucherAmount).clamp(0, double.infinity);
 
   String get orderReference => requestId.replaceAll('-', '').toUpperCase();
 
@@ -207,7 +210,10 @@ class _CheckoutV2PageState extends State<CheckoutV2Page> {
               const Text(
                 'حوّل القيمة بعد الخصم، واستخدم مرجع الطلب مع التحويل.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: MarketColors.textSecondary, fontSize: 12),
+                style: TextStyle(
+                  color: MarketColors.textSecondary,
+                  fontSize: 12,
+                ),
               ),
               const SizedBox(height: 18),
               _WalletAmountCard(amount: payableTotal, discount: voucherAmount),
@@ -250,8 +256,10 @@ class _CheckoutV2PageState extends State<CheckoutV2Page> {
           title: 'السلة فاضية',
           message: 'أضف منتجات الأول وبعدها ارجع لتأكيد الطلب.',
           icon: Icons.shopping_cart_outlined,
-          actionLabel: 'ابدأ التسوق',
-          onAction: () => openShellTab(context, 0),
+          action: FilledButton(
+            onPressed: () => openShellTab(context, 0),
+            child: const Text('ابدأ التسوق'),
+          ),
         ),
       );
     }
@@ -279,14 +287,19 @@ class _CheckoutV2PageState extends State<CheckoutV2Page> {
             ),
             if (pending != null) ...[
               const SizedBox(height: 14),
-              _PendingNotice(canReset: market.canResetPending, onReset: _resetAttempt),
+              _PendingNotice(
+                canReset: market.canResetPending,
+                onReset: _resetAttempt,
+              ),
             ],
             if (error != null) ...[
               const SizedBox(height: 14),
               _ErrorCard(
                 messageText: friendlyError(error!),
                 onRetry: load,
-                onReset: pending != null && market.canResetPending ? _resetAttempt : null,
+                onReset: pending != null && market.canResetPending
+                    ? _resetAttempt
+                    : null,
               ),
             ],
             if (quote != null) ...[
@@ -299,17 +312,27 @@ class _CheckoutV2PageState extends State<CheckoutV2Page> {
                   children: [
                     Text(
                       '${market.address?['address'] ?? 'عنوان محفوظ للمحاولة الحالية'}',
-                      style: const TextStyle(fontWeight: FontWeight.w700, height: 1.55),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        height: 1.55,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.check_circle, size: 15, color: MarketColors.primary),
+                        const Icon(
+                          Icons.check_circle,
+                          size: 15,
+                          color: MarketColors.primary,
+                        ),
                         const SizedBox(width: 5),
                         const Expanded(
                           child: Text(
                             'العنوان الافتراضي للتوصيل',
-                            style: TextStyle(fontSize: 11, color: MarketColors.textSecondary),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: MarketColors.textSecondary,
+                            ),
                           ),
                         ),
                         if (pending == null)
@@ -357,7 +380,8 @@ class _CheckoutV2PageState extends State<CheckoutV2Page> {
                           _PaymentChoice(
                             icon: Icons.account_balance_wallet_outlined,
                             title: 'المحفظة الإلكترونية',
-                            subtitle: 'فودافون كاش أو إنستا باي بالقيمة بعد الخصم.',
+                            subtitle:
+                                'فودافون كاش أو إنستا باي بالقيمة بعد الخصم.',
                             selected: method == 'wallet',
                             enabled: pending == null,
                             onTap: () => setState(() => method = 'wallet'),
@@ -371,15 +395,20 @@ class _CheckoutV2PageState extends State<CheckoutV2Page> {
                 title: 'ملاحظة للطلب',
                 child: pending != null
                     ? Text(
-                        notes.text.trim().isEmpty ? 'بدون ملاحظات' : notes.text.trim(),
-                        style: const TextStyle(color: MarketColors.textSecondary),
+                        notes.text.trim().isEmpty
+                            ? 'بدون ملاحظات'
+                            : notes.text.trim(),
+                        style: const TextStyle(
+                          color: MarketColors.textSecondary,
+                        ),
                       )
                     : TextField(
                         controller: notes,
                         maxLines: 3,
                         maxLength: 300,
                         decoration: const InputDecoration(
-                          hintText: 'مثلاً: الاتصال قبل الوصول أو ملاحظة تخص التجهيز',
+                          hintText:
+                              'مثلاً: الاتصال قبل الوصول أو ملاحظة تخص التجهيز',
                           counterText: '',
                         ),
                       ),
@@ -408,7 +437,10 @@ class _CheckoutV2PageState extends State<CheckoutV2Page> {
                       children: [
                         const Text(
                           'المطلوب دفعه',
-                          style: TextStyle(fontSize: 10, color: MarketColors.textSecondary),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: MarketColors.textSecondary,
+                          ),
                         ),
                         Text(
                           money(payableTotal),
@@ -445,8 +477,8 @@ class _CheckoutV2PageState extends State<CheckoutV2Page> {
                         submitting
                             ? 'جاري التأكيد...'
                             : pending == null
-                                ? 'تأكيد الطلب'
-                                : 'استكمال نفس المحاولة',
+                            ? 'تأكيد الطلب'
+                            : 'استكمال نفس المحاولة',
                       ),
                     ),
                   ),
@@ -462,166 +494,173 @@ class OrderSuccessV2Page extends StatelessWidget {
   const OrderSuccessV2Page({super.key, required this.orderId});
 
   Future<JsonMap> _load() async => row(
-        await market.db
-            .from('online_orders')
-            .select()
-            .eq('id', orderId)
-            .eq('customer_id', market.profile!['id'])
-            .single(),
-      );
+    await market.db
+        .from('online_orders')
+        .select()
+        .eq('id', orderId)
+        .eq('customer_id', market.profile!['id'])
+        .single(),
+  );
 
   @override
   Widget build(BuildContext context) => PageFrame(
-        'تم تأكيد الطلب',
-        LoadView<JsonMap>(
-          load: _load,
-          builder: (order) {
-            final reference = '${order['tracking_number'] ?? orderId}';
-            final amountDue = number(
-              order['amount_due'] ??
-                  number(order['total']) - number(order['loyalty_voucher_amount']),
-            );
-            final wallet = order['payment_method'] == 'wallet' && amountDue > 0;
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 34, 20, 28),
-              children: [
-                Center(
-                  child: Container(
-                    width: 86,
-                    height: 86,
-                    decoration: BoxDecoration(
-                      color: MarketColors.successSurface,
-                      borderRadius: BorderRadius.circular(28),
+    'تم تأكيد الطلب',
+    LoadView<JsonMap>(
+      load: _load,
+      builder: (order) {
+        final reference = '${order['tracking_number'] ?? orderId}';
+        final amountDue = number(
+          order['amount_due'] ??
+              number(order['total']) - number(order['loyalty_voucher_amount']),
+        );
+        final wallet = order['payment_method'] == 'wallet' && amountDue > 0;
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(20, 34, 20, 28),
+          children: [
+            Center(
+              child: Container(
+                width: 86,
+                height: 86,
+                decoration: BoxDecoration(
+                  color: MarketColors.successSurface,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  size: 52,
+                  color: MarketColors.success,
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              'طلبك وصلنا بنجاح',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'تقدر تتابع حالة طلبك لحظة بلحظة، وأي تحديث جديد هيظهر في مركز الإشعارات.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: MarketColors.textSecondary, height: 1.6),
+            ),
+            const SizedBox(height: 20),
+            _CopyRow(
+              label: 'مرجع الطلب',
+              value: reference,
+              onCopy: () async {
+                await Clipboard.setData(ClipboardData(text: reference));
+                if (context.mounted) message(context, 'تم نسخ رقم الطلب');
+              },
+            ),
+            const SizedBox(height: 12),
+            _SuccessSummary(order: order, amountDue: amountDue),
+            if (wallet) ...[
+              const SizedBox(height: 12),
+              _SectionCard(
+                icon: Icons.account_balance_wallet_outlined,
+                title: 'بيانات التحويل',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'حوّل ${money(amountDue)} عبر فودافون كاش أو إنستا باي.',
                     ),
-                    child: const Icon(
-                      Icons.check_circle_rounded,
-                      size: 52,
-                      color: MarketColors.success,
+                    const SizedBox(height: 10),
+                    _CopyRow(
+                      label: 'رقم التحويل',
+                      value: _walletPhoneNumber,
+                      onCopy: () async {
+                        await Clipboard.setData(
+                          const ClipboardData(text: _walletPhoneNumber),
+                        );
+                        if (context.mounted)
+                          message(context, 'تم نسخ رقم المحفظة');
+                      },
                     ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: MarketColors.primarySurface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: MarketColors.primaryLight),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.notifications_active_outlined,
+                    color: MarketColors.primary,
                   ),
-                ),
-                const SizedBox(height: 18),
-                const Text(
-                  'طلبك وصلنا بنجاح',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'تقدر تتابع حالة طلبك لحظة بلحظة، وأي تحديث جديد هيظهر في مركز الإشعارات.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: MarketColors.textSecondary,
-                    height: 1.6,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                _CopyRow(
-                  label: 'مرجع الطلب',
-                  value: reference,
-                  onCopy: () async {
-                    await Clipboard.setData(ClipboardData(text: reference));
-                    if (context.mounted) message(context, 'تم نسخ رقم الطلب');
-                  },
-                ),
-                const SizedBox(height: 12),
-                _SuccessSummary(order: order, amountDue: amountDue),
-                if (wallet) ...[
-                  const SizedBox(height: 12),
-                  _SectionCard(
-                    icon: Icons.account_balance_wallet_outlined,
-                    title: 'بيانات التحويل',
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text('حوّل ${money(amountDue)} عبر فودافون كاش أو إنستا باي.'),
-                        const SizedBox(height: 10),
-                        _CopyRow(
-                          label: 'رقم التحويل',
-                          value: _walletPhoneNumber,
-                          onCopy: () async {
-                            await Clipboard.setData(
-                              const ClipboardData(text: _walletPhoneNumber),
-                            );
-                            if (context.mounted) message(context, 'تم نسخ رقم المحفظة');
-                          },
-                        ),
-                      ],
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'تحديثات حالة الطلب والدفع هتظهر في مركز الإشعارات داخل التطبيق.',
+                      style: TextStyle(fontSize: 12, height: 1.5),
                     ),
                   ),
                 ],
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: MarketColors.primarySurface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: MarketColors.primaryLight),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.notifications_active_outlined, color: MarketColors.primary),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'تحديثات حالة الطلب والدفع هتظهر في مركز الإشعارات داخل التطبيق.',
-                          style: TextStyle(fontSize: 12, height: 1.5),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                FilledButton.icon(
-                  onPressed: () => open(
-                    context,
-                    OrdersPageV2(orderId: orderId),
-                  ),
-                  icon: const Icon(Icons.local_shipping_outlined),
-                  label: const Text('متابعة الطلب الآن'),
-                ),
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  onPressed: () => openShellTab(context, 0),
-                  icon: const Icon(Icons.home_outlined),
-                  label: const Text('العودة للرئيسية'),
-                ),
-              ],
-            );
-          },
-        ),
-      );
+              ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () => open(context, OrdersPageV2(orderId: orderId)),
+              icon: const Icon(Icons.local_shipping_outlined),
+              label: const Text('متابعة الطلب الآن'),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () => openShellTab(context, 0),
+              icon: const Icon(Icons.home_outlined),
+              label: const Text('العودة للرئيسية'),
+            ),
+          ],
+        );
+      },
+    ),
+  );
 }
 
 class _SectionCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final Widget child;
-  const _SectionCard({required this.icon, required this.title, required this.child});
+  const _SectionCard({
+    required this.icon,
+    required this.title,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: MarketColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: MarketColors.divider),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: MarketColors.surface,
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: MarketColors.divider),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                Icon(icon, color: MarketColors.primary, size: 21),
-                const SizedBox(width: 8),
-                Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-              ],
+            Icon(icon, color: MarketColors.primary, size: 21),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
             ),
-            const SizedBox(height: 14),
-            child,
           ],
         ),
-      );
+        const SizedBox(height: 14),
+        child,
+      ],
+    ),
+  );
 }
 
 class _PaymentChoice extends StatelessWidget {
@@ -642,45 +681,61 @@ class _PaymentChoice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: selected ? MarketColors.primarySurface : MarketColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: enabled ? onTap : null,
+    color: selected ? MarketColors.primarySurface : MarketColors.surface,
+    borderRadius: BorderRadius.circular(16),
+    child: InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: selected ? MarketColors.primary : MarketColors.divider,
-                width: selected ? 1.5 : 1,
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Radio<bool>(value: true, groupValue: selected, onChanged: enabled ? (_) => onTap() : null),
-                const SizedBox(width: 4),
-                Icon(icon, color: selected ? MarketColors.primary : MarketColors.textSecondary),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 3),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(fontSize: 11, color: MarketColors.textSecondary, height: 1.5),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          border: Border.all(
+            color: selected ? MarketColors.primary : MarketColors.divider,
+            width: selected ? 1.5 : 1,
           ),
         ),
-      );
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Radio<bool>(
+              value: true,
+              groupValue: selected,
+              onChanged: enabled ? (_) => onTap() : null,
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              icon,
+              color: selected
+                  ? MarketColors.primary
+                  : MarketColors.textSecondary,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: MarketColors.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _VoucherSection extends StatelessWidget {
@@ -703,67 +758,81 @@ class _VoucherSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _SectionCard(
-        icon: Icons.confirmation_number_outlined,
-        title: 'استخدم كوبون خصم',
-        child: lockedCode != null
-            ? Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: MarketColors.successSurface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: MarketColors.primaryLight),
+    icon: Icons.confirmation_number_outlined,
+    title: 'استخدم كوبون خصم',
+    child: lockedCode != null
+        ? Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: MarketColors.successSurface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: MarketColors.primaryLight),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'كوبون الخصم للمحاولة الحالية',
+                  style: TextStyle(fontSize: 11, color: MarketColors.primary),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'كوبون الخصم للمحاولة الحالية',
-                      style: TextStyle(fontSize: 11, color: MarketColors.primary),
-                    ),
-                    Text(lockedCode!, style: const TextStyle(fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 5),
-                    Text('الخصم ${money(lockedAmount ?? 0)}'),
-                  ],
+                Text(
+                  lockedCode!,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
-              )
-            : vouchers.isEmpty
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text(
-                        'مفيش كوبون خصم متاح حاليًا. تقدر تحوّل نقاطك إلى كوبون خصم.',
-                        style: TextStyle(color: MarketColors.textSecondary, fontSize: 12, height: 1.5),
-                      ),
-                      const SizedBox(height: 8),
-                      OutlinedButton(onPressed: onManage, child: const Text('كوبوناتي وتحويل النقاط')),
-                    ],
-                  )
-                : Column(
-                    children: [
-                      _VoucherChoice(
-                        title: 'بدون كوبون خصم',
-                        subtitle: 'ادفع إجمالي الطلب بدون خصم نقاط.',
-                        selected: selectedId == 'none',
-                        onTap: () => onSelect?.call('none'),
-                      ),
-                      const SizedBox(height: 8),
-                      ...vouchers.map((voucher) {
-                        final balance = number(voucher['remaining_value_egp']);
-                        final applied = balance.clamp(0, grossTotal);
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _VoucherChoice(
-                            title: '${voucher['voucher_code']}',
-                            subtitle: 'الرصيد ${money(balance)} · الخصم ${money(applied)}',
-                            selected: selectedId == '${voucher['id']}',
-                            onTap: () => onSelect?.call('${voucher['id']}'),
-                          ),
-                        );
-                      }),
-                      TextButton(onPressed: onManage, child: const Text('إدارة كوبونات الخصم')),
-                    ],
+                const SizedBox(height: 5),
+                Text('الخصم ${money(lockedAmount ?? 0)}'),
+              ],
+            ),
+          )
+        : vouchers.isEmpty
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'مفيش كوبون خصم متاح حاليًا. تقدر تحوّل نقاطك إلى كوبون خصم.',
+                style: TextStyle(
+                  color: MarketColors.textSecondary,
+                  fontSize: 12,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: onManage,
+                child: const Text('كوبوناتي وتحويل النقاط'),
+              ),
+            ],
+          )
+        : Column(
+            children: [
+              _VoucherChoice(
+                title: 'بدون كوبون خصم',
+                subtitle: 'ادفع إجمالي الطلب بدون خصم نقاط.',
+                selected: selectedId == 'none',
+                onTap: () => onSelect?.call('none'),
+              ),
+              const SizedBox(height: 8),
+              ...vouchers.map((voucher) {
+                final balance = number(voucher['remaining_value_egp']);
+                final applied = balance.clamp(0, grossTotal);
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _VoucherChoice(
+                    title: '${voucher['voucher_code']}',
+                    subtitle:
+                        'الرصيد ${money(balance)} · الخصم ${money(applied)}',
+                    selected: selectedId == '${voucher['id']}',
+                    onTap: () => onSelect?.call('${voucher['id']}'),
                   ),
-      );
+                );
+              }),
+              TextButton(
+                onPressed: onManage,
+                child: const Text('إدارة كوبونات الخصم'),
+              ),
+            ],
+          ),
+  );
 }
 
 class _VoucherChoice extends StatelessWidget {
@@ -780,39 +849,56 @@ class _VoucherChoice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: selected ? MarketColors.primarySurface : MarketColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          onTap: onTap,
+    color: selected ? MarketColors.primarySurface : MarketColors.surface,
+    borderRadius: BorderRadius.circular(14),
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(13),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: selected ? MarketColors.primary : MarketColors.divider),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 2),
-                      Text(subtitle, style: const TextStyle(fontSize: 11, color: MarketColors.textSecondary)),
-                    ],
-                  ),
-                ),
-                if (selected)
-                  const Icon(Icons.check_circle_rounded, color: MarketColors.primary)
-                else
-                  const Icon(Icons.circle_outlined, color: MarketColors.textTertiary),
-              ],
-            ),
+          border: Border.all(
+            color: selected ? MarketColors.primary : MarketColors.divider,
           ),
         ),
-      );
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: MarketColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (selected)
+              const Icon(
+                Icons.check_circle_rounded,
+                color: MarketColors.primary,
+              )
+            else
+              const Icon(
+                Icons.circle_outlined,
+                color: MarketColors.textTertiary,
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _OrderSummary extends StatelessWidget {
@@ -832,7 +918,8 @@ class _OrderSummary extends StatelessWidget {
   String _amount(JsonMap item) {
     final quantity = number(item['quantity']);
     if ('${item['unit_of_measure']}' == 'weight') {
-      if (quantity >= 1000) return '${(quantity / 1000).toStringAsFixed(2)} كجم';
+      if (quantity >= 1000)
+        return '${(quantity / 1000).toStringAsFixed(2)} كجم';
       return '${quantity.round()} جم';
     }
     if (item['is_bulk'] == true) {
@@ -858,7 +945,11 @@ class _OrderSummary extends StatelessWidget {
             ),
             child: const Row(
               children: [
-                Icon(Icons.verified_user_outlined, color: MarketColors.primary, size: 19),
+                Icon(
+                  Icons.verified_user_outlined,
+                  color: MarketColors.primary,
+                  size: 19,
+                ),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -880,26 +971,51 @@ class _OrderSummary extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('${item['name']}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                        Text(_amount(item), style: const TextStyle(fontSize: 10, color: MarketColors.textSecondary)),
+                        Text(
+                          '${item['name']}',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          _amount(item),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: MarketColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  Text(money(item['total']), style: const TextStyle(fontWeight: FontWeight.w700)),
+                  Text(
+                    money(item['total']),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ],
               ),
             ),
           ),
           const Divider(),
           _AmountLine('قيمة المنتجات', money(quote['subtotal'])),
-          _AmountLine('التوصيل', quote['free_delivery'] == true || shipping <= 0 ? 'مجاني' : money(shipping)),
+          _AmountLine(
+            'التوصيل',
+            quote['free_delivery'] == true || shipping <= 0
+                ? 'مجاني'
+                : money(shipping),
+          ),
           _AmountLine('إجمالي الطلب', money(quote['total'])),
           if (voucherAmount > 0)
-            _AmountLine('كوبون الخصم', '- ${money(voucherAmount)}', accent: true),
+            _AmountLine(
+              'كوبون الخصم',
+              '- ${money(voucherAmount)}',
+              accent: true,
+            ),
           const Divider(),
           _AmountLine('المطلوب دفعه', money(payableTotal), emphasized: true),
           const SizedBox(height: 10),
-          _CopyRow(label: 'مرجع الطلب', value: reference, onCopy: onCopyReference),
+          _CopyRow(
+            label: 'مرجع الطلب',
+            value: reference,
+            onCopy: onCopyReference,
+          ),
         ],
       ),
     );
@@ -911,33 +1027,40 @@ class _AmountLine extends StatelessWidget {
   final String value;
   final bool emphasized;
   final bool accent;
-  const _AmountLine(this.label, this.value, {this.emphasized = false, this.accent = false});
+  const _AmountLine(
+    this.label,
+    this.value, {
+    this.emphasized = false,
+    this.accent = false,
+  });
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 5),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontWeight: emphasized ? FontWeight.w800 : FontWeight.w500,
-                  color: accent ? MarketColors.primary : MarketColors.textPrimary,
-                ),
-              ),
+    padding: const EdgeInsets.symmetric(vertical: 5),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: emphasized ? FontWeight.w800 : FontWeight.w500,
+              color: accent ? MarketColors.primary : MarketColors.textPrimary,
             ),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: emphasized ? 17 : 13,
-                fontWeight: emphasized ? FontWeight.w800 : FontWeight.w700,
-                color: emphasized || accent ? MarketColors.primary : MarketColors.textPrimary,
-              ),
-            ),
-          ],
+          ),
         ),
-      );
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: emphasized ? 17 : 13,
+            fontWeight: emphasized ? FontWeight.w800 : FontWeight.w700,
+            color: emphasized || accent
+                ? MarketColors.primary
+                : MarketColors.textPrimary,
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 class _PendingNotice extends StatelessWidget {
@@ -947,68 +1070,75 @@ class _PendingNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: MarketColors.warningSurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: MarketColors.warning.withValues(alpha: .24)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: MarketColors.warningSurface,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: MarketColors.warning.withValues(alpha: .24)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.refresh_rounded, color: MarketColors.warning),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'في محاولة طلب سابقة محفوظة بأمان. هنكمل بنفس المرجع عشان مايتعملش طلب مكرر أو يتخصم الكوبون مرتين.',
-                    style: TextStyle(fontSize: 12, height: 1.55),
-                  ),
-                ),
-              ],
+            Icon(Icons.refresh_rounded, color: MarketColors.warning),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'في محاولة طلب سابقة محفوظة بأمان. هنكمل بنفس المرجع عشان مايتعملش طلب مكرر أو يتخصم الكوبون مرتين.',
+                style: TextStyle(fontSize: 12, height: 1.55),
+              ),
             ),
-            if (canReset) ...[
-              const SizedBox(height: 8),
-              TextButton(onPressed: onReset, child: const Text('إلغاء المحاولة ومراجعة الطلب من جديد')),
-            ],
           ],
         ),
-      );
+        if (canReset) ...[
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: onReset,
+            child: const Text('إلغاء المحاولة ومراجعة الطلب من جديد'),
+          ),
+        ],
+      ],
+    ),
+  );
 }
 
 class _ErrorCard extends StatelessWidget {
   final String messageText;
   final VoidCallback onRetry;
   final VoidCallback? onReset;
-  const _ErrorCard({required this.messageText, required this.onRetry, this.onReset});
+  const _ErrorCard({
+    required this.messageText,
+    required this.onRetry,
+    this.onReset,
+  });
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: MarketColors.errorSurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: MarketColors.error.withValues(alpha: .2)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: MarketColors.errorSurface,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: MarketColors.error.withValues(alpha: .2)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           children: [
-            Row(
-              children: [
-                const Icon(Icons.error_outline_rounded, color: MarketColors.error),
-                const SizedBox(width: 8),
-                Expanded(child: Text(messageText)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton(onPressed: onRetry, child: const Text('إعادة المراجعة')),
-            if (onReset != null)
-              TextButton(onPressed: onReset, child: const Text('بدء مراجعة جديدة')),
+            const Icon(Icons.error_outline_rounded, color: MarketColors.error),
+            const SizedBox(width: 8),
+            Expanded(child: Text(messageText)),
           ],
         ),
-      );
+        const SizedBox(height: 8),
+        OutlinedButton(onPressed: onRetry, child: const Text('إعادة المراجعة')),
+        if (onReset != null)
+          TextButton(onPressed: onReset, child: const Text('بدء مراجعة جديدة')),
+      ],
+    ),
+  );
 }
 
 class _CoveredByVoucher extends StatelessWidget {
@@ -1016,49 +1146,69 @@ class _CoveredByVoucher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: MarketColors.successSurface,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Text(
-          'مش مطلوب دفع إضافي. كوبون الخصم يغطي كامل قيمة الطلب.',
-          style: TextStyle(color: MarketColors.primary, fontWeight: FontWeight.w700),
-        ),
-      );
+    width: double.infinity,
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: MarketColors.successSurface,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: const Text(
+      'مش مطلوب دفع إضافي. كوبون الخصم يغطي كامل قيمة الطلب.',
+      style: TextStyle(
+        color: MarketColors.primary,
+        fontWeight: FontWeight.w700,
+      ),
+    ),
+  );
 }
 
 class _CopyRow extends StatelessWidget {
   final String label;
   final String value;
   final VoidCallback onCopy;
-  const _CopyRow({required this.label, required this.value, required this.onCopy});
+  const _CopyRow({
+    required this.label,
+    required this.value,
+    required this.onCopy,
+  });
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: MarketColors.surfaceSecondary,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: MarketColors.divider),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: const TextStyle(fontSize: 10, color: MarketColors.textSecondary)),
-                  const SizedBox(height: 2),
-                  SelectableText(value, style: const TextStyle(fontWeight: FontWeight.w800)),
-                ],
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: MarketColors.surfaceSecondary,
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: MarketColors.divider),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: MarketColors.textSecondary,
+                ),
               ),
-            ),
-            IconButton(onPressed: onCopy, tooltip: 'نسخ', icon: const Icon(Icons.copy_rounded, size: 20)),
-          ],
+              const SizedBox(height: 2),
+              SelectableText(
+                value,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
         ),
-      );
+        IconButton(
+          onPressed: onCopy,
+          tooltip: 'نسخ',
+          icon: const Icon(Icons.copy_rounded, size: 20),
+        ),
+      ],
+    ),
+  );
 }
 
 class _WalletAmountCard extends StatelessWidget {
@@ -1068,27 +1218,31 @@ class _WalletAmountCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: MarketColors.primarySurface,
-          borderRadius: BorderRadius.circular(18),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: MarketColors.primarySurface,
+      borderRadius: BorderRadius.circular(18),
+    ),
+    child: Column(
+      children: [
+        const Text('المبلغ المطلوب'),
+        const SizedBox(height: 3),
+        Text(
+          money(amount),
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            color: MarketColors.primary,
+          ),
         ),
-        child: Column(
-          children: [
-            const Text('المبلغ المطلوب'),
-            const SizedBox(height: 3),
-            Text(
-              money(amount),
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: MarketColors.primary),
-            ),
-            if (discount > 0)
-              Text(
-                'بعد خصم ${money(discount)} بالكوبون',
-                style: const TextStyle(fontSize: 11, color: MarketColors.primary),
-              ),
-          ],
-        ),
-      );
+        if (discount > 0)
+          Text(
+            'بعد خصم ${money(discount)} بالكوبون',
+            style: const TextStyle(fontSize: 11, color: MarketColors.primary),
+          ),
+      ],
+    ),
+  );
 }
 
 class _SuccessSummary extends StatelessWidget {
@@ -1098,25 +1252,31 @@ class _SuccessSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: MarketColors.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: MarketColors.divider),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: MarketColors.surface,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: MarketColors.divider),
+    ),
+    child: Column(
+      children: [
+        _AmountLine('إجمالي الطلب', money(order['total'])),
+        if (number(order['loyalty_voucher_amount']) > 0)
+          _AmountLine(
+            'كوبون الخصم',
+            '- ${money(order['loyalty_voucher_amount'])}',
+            accent: true,
+          ),
+        _AmountLine('المطلوب دفعه', money(amountDue), emphasized: true),
+        const Divider(),
+        _AmountLine(
+          'حالة الدفع',
+          statusLabels['${order['payment_status']}'] ??
+              ('${order['payment_status']}'.isEmpty
+                  ? 'بانتظار الدفع'
+                  : '${order['payment_status']}'),
         ),
-        child: Column(
-          children: [
-            _AmountLine('إجمالي الطلب', money(order['total'])),
-            if (number(order['loyalty_voucher_amount']) > 0)
-              _AmountLine('كوبون الخصم', '- ${money(order['loyalty_voucher_amount'])}', accent: true),
-            _AmountLine('المطلوب دفعه', money(amountDue), emphasized: true),
-            const Divider(),
-            _AmountLine(
-              'حالة الدفع',
-              statusLabels['${order['payment_status']}'] ??
-                  ('${order['payment_status']}'.isEmpty ? 'بانتظار الدفع' : '${order['payment_status']}'),
-            ),
-          ],
-        ),
-      );
+      ],
+    ),
+  );
 }

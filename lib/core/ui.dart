@@ -10,6 +10,8 @@ final ValueNotifier<int> shellTabIndex = ValueNotifier<int>(0);
 Widget Function(BuildContext context)? notificationsPageBuilder;
 Widget Function(BuildContext context)? favoritesPageBuilder;
 Widget Function(BuildContext context, String id, bool bulk)? productPageBuilder;
+Widget Function(BuildContext context)? checkoutPageBuilder;
+Widget Function(BuildContext context, String? orderId)? ordersPageBuilder;
 
 void openShellTab(BuildContext context, int index) {
   shellTabIndex.value = index;
@@ -23,6 +25,12 @@ Future<T?> open<T>(BuildContext context, Widget page) {
     resolvedPage = notificationsPageBuilder!(context);
   } else if (type == 'FavoritesPage' && favoritesPageBuilder != null) {
     resolvedPage = favoritesPageBuilder!(context);
+  } else if (type == 'CheckoutPage' && checkoutPageBuilder != null) {
+    resolvedPage = checkoutPageBuilder!(context);
+  } else if (type == 'OrdersPage' && ordersPageBuilder != null) {
+    final dynamic legacy = page;
+    final value = legacy.orderId;
+    resolvedPage = ordersPageBuilder!(context, value == null ? null : '$value');
   } else if (type == 'ProductPage' && productPageBuilder != null) {
     final dynamic legacy = page;
     resolvedPage = productPageBuilder!(
