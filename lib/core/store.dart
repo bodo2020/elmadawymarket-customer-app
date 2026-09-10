@@ -390,6 +390,7 @@ class MarketStore extends ChangeNotifier {
     String notes = '',
     String? voucher,
     double? voucherAmount,
+    String? requestId,
   }) async {
     if (placing) throw StateError('REQUEST_IN_PROGRESS');
     placing = true;
@@ -408,7 +409,7 @@ class MarketStore extends ChangeNotifier {
           throw StateError('ADDRESS_REQUIRED');
         }
         payload = {
-          'p_request_id': const Uuid().v4(),
+          'p_request_id': requestId ?? const Uuid().v4(),
           'p_items': checkoutLines(cart),
           'p_address_id': address!['id'],
           'p_payment_method': method,

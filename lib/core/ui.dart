@@ -7,40 +7,67 @@ export 'store.dart';
 
 late MarketStore market;
 final ValueNotifier<int> shellTabIndex = ValueNotifier<int>(0);
+Widget Function(BuildContext context)? notificationsPageBuilder;
+Widget Function(BuildContext context)? favoritesPageBuilder;
+Widget Function(BuildContext context, String id, bool bulk)? productPageBuilder;
+Widget Function(BuildContext context)? checkoutPageBuilder;
+Widget Function(BuildContext context, String? orderId)? ordersPageBuilder;
 
 void openShellTab(BuildContext context, int index) {
   shellTabIndex.value = index;
   Navigator.of(context).popUntil((route) => route.isFirst);
 }
 
-Future<T?> open<T>(BuildContext context, Widget page) =>
-    Navigator.of(context).push<T>(
-      PageRouteBuilder<T>(
-        pageBuilder: (_, animation, secondaryAnimation) => page,
-        transitionDuration: MediaQuery.disableAnimationsOf(context)
-            ? Duration.zero
-            : const Duration(milliseconds: 220),
-        reverseTransitionDuration: MediaQuery.disableAnimationsOf(context)
-            ? Duration.zero
-            : const Duration(milliseconds: 200),
-        transitionsBuilder: (_, animation, secondaryAnimation, child) {
-          final eased = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          );
-          return FadeTransition(
-            opacity: eased,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(-.025, .015),
-                end: Offset.zero,
-              ).animate(eased),
-              child: child,
-            ),
-          );
-        },
-      ),
+Future<T?> open<T>(BuildContext context, Widget page) {
+  Widget resolvedPage = page;
+  final type = page.runtimeType.toString();
+  if (type == 'NotificationsPage' && notificationsPageBuilder != null) {
+    resolvedPage = notificationsPageBuilder!(context);
+  } else if (type == 'FavoritesPage' && favoritesPageBuilder != null) {
+    resolvedPage = favoritesPageBuilder!(context);
+  } else if (type == 'CheckoutPage' && checkoutPageBuilder != null) {
+    resolvedPage = checkoutPageBuilder!(context);
+  } else if (type == 'OrdersPage' && ordersPageBuilder != null) {
+    final dynamic legacy = page;
+    final value = legacy.orderId;
+    resolvedPage = ordersPageBuilder!(context, value == null ? null : '$value');
+  } else if (type == 'ProductPage' && productPageBuilder != null) {
+    final dynamic legacy = page;
+    resolvedPage = productPageBuilder!(
+      context,
+      '${legacy.id}',
+      legacy.bulk == true,
     );
+  }
+  return Navigator.of(context).push<T>(
+    PageRouteBuilder<T>(
+      pageBuilder: (_, animation, secondaryAnimation) => resolvedPage,
+      transitionDuration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 220),
+      reverseTransitionDuration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 200),
+      transitionsBuilder: (_, animation, secondaryAnimation, child) {
+        final eased = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
+        return FadeTransition(
+          opacity: eased,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(-.025, .015),
+              end: Offset.zero,
+            ).animate(eased),
+            child: child,
+          ),
+        );
+      },
+    ),
+  );
+}
+
 void message(BuildContext context, String text) {
   if (context.mounted) {
     final messenger = ScaffoldMessenger.of(context);
