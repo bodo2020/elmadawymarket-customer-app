@@ -7,6 +7,8 @@ import '../core/ui.dart';
 import 'address.dart';
 import 'catalog.dart';
 import 'categories_v2.dart';
+import 'product_v2.dart';
+import 'search_v2.dart';
 
 class StoreHomeV2 extends StatelessWidget {
   const StoreHomeV2({super.key});
@@ -53,7 +55,7 @@ class StoreHomeV2 extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
-            const CollectionsSection(),
+            const CollectionsSectionV2(),
           ],
         ),
       );
@@ -151,6 +153,86 @@ class _DeliveryAddressCard extends StatelessWidget {
   }
 }
 
+Future<void> _openBannerV2(BuildContext context, JsonMap banner) async {
+  final ids = banner['products'];
+  if (ids is List && ids.isNotEmpty) {
+    await open(
+      context,
+      CatalogV2Page(
+        title: '${banner['title'] ?? 'العرض'}',
+        productIds: ids.map((e) => '$e').toList(),
+      ),
+    );
+    return;
+  }
+
+  final filters = <String, dynamic>{};
+  if (banner['company_id'] != null) {
+    filters['p_company_id'] = banner['company_id'];
+  }
+  if (banner['main_category_id'] != null || banner['category_id'] != null) {
+    filters['p_main_category_id'] =
+        banner['main_category_id'] ?? banner['category_id'];
+  }
+  if (filters.isNotEmpty) {
+    await open(
+      context,
+      CatalogV2Page(title: '${banner['title'] ?? 'العرض'}', filters: filters),
+    );
+    return;
+  }
+
+  final link = '${banner['link'] ?? ''}';
+  final segments = Uri.tryParse(link)?.pathSegments ?? <String>[];
+  if (link.startsWith('/')) {
+    if (segments.length == 2 && segments.first == 'product') {
+      await open(context, ProductPageV2(segments.last));
+      return;
+    }
+    if (segments.length >= 2 && segments.first == 'category') {
+      await open(
+        context,
+        CatalogV2Page(
+          title: 'منتجات القسم',
+          filters: {'p_main_category_id': segments[1]},
+        ),
+      );
+      return;
+    }
+    if (segments.length == 2 && segments.first == 'company') {
+      await open(
+        context,
+        CatalogV2Page(
+          title: 'منتجات الشركة',
+          filters: {'p_company_id': segments.last},
+        ),
+      );
+      return;
+    }
+    if (link == '/bulk-products') {
+      await open(
+        context,
+        const CatalogV2Page(title: 'عبوات وجملة', bulkOnly: true),
+      );
+      return;
+    }
+    if (link == '/search') {
+      await open(context, const SearchV2Page());
+      return;
+    }
+    if (link == '/categories') {
+      await open(context, const PageFrame('الأقسام', CategoriesV2Page()));
+      return;
+    }
+    if (link == '/') {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      return;
+    }
+  }
+
+  await openBanner(context, banner);
+}
+
 class _HomeBanners extends StatefulWidget {
   const _HomeBanners();
 
@@ -210,7 +292,7 @@ class _HomeBannersState extends State<_HomeBanners> {
                     itemBuilder: (context, i) {
                       final banner = banners[i];
                       return InkWell(
-                        onTap: () => openBanner(context, banner),
+                        onTap: () => _openBannerV2(context, banner),
                         child: Image.network(
                           '${banner['image_url'] ?? ''}',
                           fit: BoxFit.cover,
