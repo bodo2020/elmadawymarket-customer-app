@@ -1,6 +1,6 @@
 # المعداوي ماركت — Flutter
 
-تطبيق Flutter/Dart أصلي للعملاء، منفصل عن نسخة React. لا يستخدم WebView. مبني على المستودع `bodo2020/suq-arabi-mobile-market`، فرع `main` عند commit `5caa03569ca48f236f54f57fae5e8121f088e4bb` بتاريخ 9 سبتمبر 2026.
+تطبيق Flutter/Dart أصلي للعملاء، منفصل عن نسخة React. لا يستخدم WebView. الـbaseline الأصلي مبني على المستودع `bodo2020/suq-arabi-mobile-market`، فرع `main` عند commit `5caa03569ca48f236f54f57fae5e8121f088e4bb` بتاريخ 9 سبتمبر 2026، ثم تمت مزامنة تغييرات مركز إشعارات العملاء V2 من النسخة الحالية حتى commit `dfdf30373d71bee7f602b721535ae0e1119bc66d`.
 
 ## التشغيل
 
@@ -23,11 +23,13 @@ flutter build appbundle --release --dart-define-from-file=config.json
 
 - `lib/core/models.dart`: المنتجات، الكميات، الوزن بالجرام، العبوات والتنسيق.
 - `lib/core/store.dart`: Supabase، تحديد فرع التوصيل، حفظ السلة ومزامنتها ومحاولات الطلب.
+- `lib/core/ui.dart`: مكونات الواجهة والتنقل المشترك، ويحوّل أي مدخل إشعارات قديم إلى Notification Center V2.
 - `lib/screens/catalog.dart`: الرئيسية والأقسام والشركات والبحث والباركود وتفاصيل المنتج.
 - `lib/screens/auth.dart`: OTP وكلمة المرور والتسجيل وتعديل الحساب.
 - `lib/screens/address.dart`: خريطة العنوان وإدارته وتحديد الفرع حسب الطريق الفعلي.
 - `lib/screens/checkout.dart`: السلة والتسعير والمراجعة والتأكيد والإيصال.
-- `lib/screens/account.dart`: المفضلة والمشتريات والتتبع والإشعارات والولاء والقسائم.
+- `lib/screens/account.dart`: المفضلة والمشتريات والتتبع والولاء والقسائم.
+- `lib/screens/notifications_v2.dart`: مركز إشعارات العميل V2، العدّاد، الفلترة، القراءة الفردية/الجماعية، وفتح الإجراء المرتبط بالإشعار.
 - `lib/screens/returns.dart`: الاسترجاع والصور وحالة المراجعة.
 - `test/`: اختبارات كميات وأسعار واستعادة الطلب ومنع التكرار.
 
@@ -41,7 +43,9 @@ flutter build appbundle --release --dart-define-from-file=config.json
 
 السلة تستخدم `replace_customer_cart` مع `p_expected_user_id`؛ المفضلة `set_customer_favorite_unit`، والعنوان الافتراضي `set_default_customer_address`. بعد نجاح المزامنة يقرأ التشغيل التالي نسخة السيرفر كي تظهر تعديلات الأجهزة الأخرى. تبقى التعديلات التي فشلت مزامنتها على الجهاز.
 
-المشتريات تجمع فواتير الفرع والأونلاين عبر `get_my_purchase_history`، مع Realtime والتحديث كل 30 ثانية وأزرار تحديث وسجل `order_status_history`. الإشعارات داخل التطبيق تستخدم Realtime وتُحدث كل 30 ثانية؛ لا توجد إضافة جديدة لإشعارات Push في الخلفية.
+المشتريات تجمع فواتير الفرع والأونلاين عبر `get_my_purchase_history`، مع Realtime والتحديث كل 30 ثانية وأزرار تحديث وسجل `order_status_history`.
+
+الإشعارات داخل التطبيق تستخدم الآن نفس Notification Center V2 الخاص بالنسخة الحالية: `sync_my_notification_center_v2` ثم `get_my_notification_center_v2`، مع `mark_notification_read_v2` و`mark_all_notifications_read_v2`. الجرس يعرض عدد غير المقروء، وصفحة المركز تعرض الإجمالي وإشعارات اليوم وتفتح الإجراء أو الطلب المرتبط. يوجد تحديث دوري كمسار احتياطي. Native Push في Flutter لم يُفعّل بعد؛ يحتاج إعداد FCM/APNs وملفات المنصات قبل اعتباره مكافئًا لتهيئة Capacitor الاختيارية في نسخة React.
 
 الاسترجاع يستخدم `create_customer_return_request` وصورًا تحت مسار المستخدم داخل bucket `returns`. لا ينشئ bucket ولا يعدّل سياسات الإنتاج. عدم التأكد من نتيجة إرسال الاسترجاع يوقف الإرسال المتكرر ويوجه لمراجعة الطلبات.
 
