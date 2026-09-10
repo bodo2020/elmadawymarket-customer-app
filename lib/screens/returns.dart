@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import '../core/design.dart';
 import '../core/ui.dart';
 import 'account.dart';
 
@@ -19,7 +20,7 @@ class ReturnsPage extends StatelessWidget {
       builder: (data) => data.isEmpty
           ? const EmptyView('مفيش طلبات استرجاع')
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(MarketSpace.md),
               children: data
                   .map(
                     (r) => panel(
@@ -179,7 +180,7 @@ class _ReturnFormPageState extends State<ReturnFormPage> {
     'طلب استرجاع',
     ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(MarketSpace.lg),
       children: [
         heading('اختار المنتجات والكميات'),
         ...normalizeOrderItems(widget.order['items']).map((item) {

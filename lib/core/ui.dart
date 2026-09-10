@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'design.dart';
 import 'models.dart';
 import 'store.dart';
 export 'models.dart';
@@ -6,10 +7,52 @@ export 'store.dart';
 
 late MarketStore market;
 Future<T?> open<T>(BuildContext context, Widget page) =>
-    Navigator.of(context).push<T>(MaterialPageRoute(builder: (_) => page));
+    Navigator.of(context).push<T>(
+      PageRouteBuilder<T>(
+        pageBuilder: (_, animation, secondaryAnimation) => page,
+        transitionDuration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 220),
+        reverseTransitionDuration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 200),
+        transitionsBuilder: (_, animation, secondaryAnimation, child) {
+          final eased = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+          return FadeTransition(
+            opacity: eased,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(-.025, .015),
+                end: Offset.zero,
+              ).animate(eased),
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
 void message(BuildContext context, String text) {
   if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(
+              Icons.info_outline_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: MarketSpace.sm),
+            Expanded(child: Text(text)),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -28,56 +71,117 @@ Future<bool> perform(
   }
 }
 
-Widget photo(String url, {double? height, double? width}) => url.isEmpty
-    ? SizedBox(
-        height: height,
-        width: width,
-        child: const Icon(
+Widget photo(String url, {double? height, double? width}) => Container(
+  height: height,
+  width: width,
+  color: MarketColors.background,
+  alignment: Alignment.center,
+  child: url.isEmpty
+      ? const Icon(
           Icons.shopping_basket_outlined,
-          size: 48,
-          color: Colors.grey,
-        ),
-      )
-    : Image.network(
-        url,
-        height: height,
-        width: width,
-        fit: BoxFit.contain,
-        frameBuilder: (context, child, frame, sync) => AnimatedOpacity(
-          opacity: sync || frame != null ? 1 : 0,
-          duration: MediaQuery.disableAnimationsOf(context)
-              ? Duration.zero
-              : const Duration(milliseconds: 180),
-          child: child,
-        ),
-        errorBuilder: (_, e, s) => SizedBox(
+          size: 44,
+          color: MarketColors.textTertiary,
+        )
+      : Image.network(
+          url,
           height: height,
           width: width,
-          child: const Icon(
+          fit: BoxFit.contain,
+          frameBuilder: (context, child, frame, sync) => AnimatedOpacity(
+            opacity: sync || frame != null ? 1 : 0,
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            child: child,
+          ),
+          errorBuilder: (_, e, s) => const Icon(
             Icons.image_not_supported_outlined,
-            color: Colors.grey,
+            size: 36,
+            color: MarketColors.textTertiary,
           ),
         ),
-      );
+);
 Widget heading(String text) => Padding(
-  padding: const EdgeInsets.symmetric(vertical: 16),
-  child: Text(
-    text,
-    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+  padding: const EdgeInsets.only(top: MarketSpace.xl, bottom: MarketSpace.sm),
+  child: Builder(
+    builder: (context) =>
+        Text(text, style: Theme.of(context).textTheme.headlineSmall),
   ),
 );
 Widget panel(Widget child) => Card(
-  child: Padding(padding: const EdgeInsets.all(16), child: child),
+  child: Padding(padding: const EdgeInsets.all(MarketSpace.md), child: child),
 );
+
+class SectionHeader extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  const SectionHeader(
+    this.title, {
+    super.key,
+    this.subtitle,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: MarketSpace.xl, bottom: MarketSpace.sm),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.headlineSmall),
+              if (subtitle != null) ...[
+                const SizedBox(height: MarketSpace.xxs),
+                Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ],
+          ),
+        ),
+        if (onAction != null)
+          TextButton(
+            onPressed: onAction,
+            child: Text(actionLabel ?? 'عرض الكل'),
+          ),
+      ],
+    ),
+  );
+}
 
 class PageFrame extends StatelessWidget {
   final String title;
   final Widget child;
   final List<Widget>? actions;
-  const PageFrame(this.title, this.child, {super.key, this.actions});
+  final Widget? bottom;
+  const PageFrame(
+    this.title,
+    this.child, {
+    super.key,
+    this.actions,
+    this.bottom,
+  });
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(title), actions: actions),
+    appBar: AppBar(
+      title: Text(title),
+      actions: actions,
+      leading: Navigator.of(context).canPop()
+          ? Padding(
+              padding: const EdgeInsets.all(6),
+              child: IconButton.filledTonal(
+                tooltip: 'رجوع',
+                onPressed: () => Navigator.of(context).maybePop(),
+                icon: const Icon(Icons.arrow_forward_rounded),
+              ),
+            )
+          : null,
+    ),
     body: SafeArea(
       child: Align(
         alignment: Alignment.topCenter,
@@ -87,6 +191,7 @@ class PageFrame extends StatelessWidget {
         ),
       ),
     ),
+    bottomNavigationBar: bottom,
   );
 }
 
@@ -151,12 +256,14 @@ class ActionButton extends StatefulWidget {
   final Future<void> Function() action;
   final IconData? icon;
   final bool enabled;
+  final bool danger;
   const ActionButton(
     this.label,
     this.action, {
     super.key,
     this.icon,
     this.enabled = true,
+    this.danger = false,
   });
   @override
   State<ActionButton> createState() => _ActionButtonState();
@@ -166,6 +273,12 @@ class _ActionButtonState extends State<ActionButton> {
   bool busy = false;
   @override
   Widget build(BuildContext context) => FilledButton(
+    style: widget.danger
+        ? FilledButton.styleFrom(
+            backgroundColor: MarketColors.error,
+            foregroundColor: Colors.white,
+          )
+        : null,
     onPressed: busy || !widget.enabled
         ? null
         : () async {
@@ -174,12 +287,15 @@ class _ActionButtonState extends State<ActionButton> {
             if (mounted) setState(() => busy = false);
           },
     child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: MarketSpace.xs),
       child: busy
           ? const SizedBox(
               width: 20,
               height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: Colors.white,
+              ),
             )
           : Row(
               mainAxisSize: MainAxisSize.min,
@@ -206,12 +322,15 @@ class EmptyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
     physics: const AlwaysScrollableScrollPhysics(),
-    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+    padding: const EdgeInsets.symmetric(
+      vertical: 40,
+      horizontal: MarketSpace.lg,
+    ),
     children: [
       StatusSurface(
         title: text,
-        message: 'هتلاقي اختياراتك وتحديثاتها هنا.',
-        icon: Icons.shopping_bag_outlined,
+        message: 'ابدأ اختار اللي محتاجه وهتلاقيه هنا.',
+        icon: Icons.shopping_basket_outlined,
         action: onAction == null
             ? null
             : FilledButton(
@@ -241,37 +360,38 @@ class StatusSurface extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(MarketSpace.lg),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  width: 72,
+                  height: 72,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: const Color(0xffeaf3ed),
-                    borderRadius: BorderRadius.circular(22),
+                    color: MarketColors.primarySurface,
+                    borderRadius: BorderRadius.circular(
+                      MarketRadius.extraLarge,
+                    ),
                   ),
-                  child: Icon(icon, size: 30, color: const Color(0xff005931)),
+                  child: Icon(icon, size: 32, color: MarketColors.primary),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: MarketSpace.md),
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: MarketSpace.xs),
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xff63736a),
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-                if (action != null) ...[const SizedBox(height: 16), action!],
+                if (action != null) ...[
+                  const SizedBox(height: MarketSpace.md),
+                  action!,
+                ],
               ],
             ),
           ),
@@ -281,26 +401,123 @@ class StatusSurface extends StatelessWidget {
   );
 }
 
-class LoadingSurface extends StatelessWidget {
+class LoadingSurface extends StatefulWidget {
   const LoadingSurface({super.key});
+  @override
+  State<LoadingSurface> createState() => _LoadingSurfaceState();
+}
+
+class _LoadingSurfaceState extends State<LoadingSurface>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController controller;
+  @override
+  void initState() {
+    super.initState();
+    controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+      lowerBound: .45,
+      upperBound: 1,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
       if (box.hasBoundedHeight && box.maxHeight < 180) {
-        return const Center(
-          child: SizedBox(
-            width: 80,
-            child: LinearProgressIndicator(minHeight: 3),
-          ),
+        return const Padding(
+          padding: EdgeInsets.all(MarketSpace.md),
+          child: _Skeleton(height: 44, radius: MarketRadius.medium),
         );
       }
-      return const StatusSurface(
-        title: 'لحظة واحدة',
-        message: 'بنجهّز المحتوى…',
-        icon: Icons.hourglass_top_rounded,
-        action: LinearProgressIndicator(minHeight: 3),
+      return FadeTransition(
+        opacity: MediaQuery.disableAnimationsOf(context)
+            ? const AlwaysStoppedAnimation(1)
+            : controller,
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(MarketSpace.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: const [
+                _Skeleton(height: 54, radius: MarketRadius.large),
+                SizedBox(height: MarketSpace.md),
+                _Skeleton(height: 176, radius: MarketRadius.extraLarge),
+                SizedBox(height: MarketSpace.xl),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: _Skeleton(
+                    height: 24,
+                    width: 150,
+                    radius: MarketRadius.small,
+                  ),
+                ),
+                SizedBox(height: MarketSpace.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _Skeleton(
+                        height: 180,
+                        radius: MarketRadius.large,
+                      ),
+                    ),
+                    SizedBox(width: MarketSpace.sm),
+                    Expanded(
+                      child: _Skeleton(
+                        height: 180,
+                        radius: MarketRadius.large,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     },
+  );
+}
+
+class _Skeleton extends StatelessWidget {
+  final double height;
+  final double? width;
+  final double radius;
+  const _Skeleton({required this.height, this.width, required this.radius});
+  @override
+  Widget build(BuildContext context) => Container(
+    width: width,
+    height: height,
+    decoration: BoxDecoration(
+      color: const Color(0xffeceeec),
+      borderRadius: BorderRadius.circular(radius),
+    ),
+  );
+}
+
+class StickyBottomCTA extends StatelessWidget {
+  final Widget child;
+  const StickyBottomCTA({super.key, required this.child});
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.fromLTRB(
+      MarketSpace.md,
+      MarketSpace.sm,
+      MarketSpace.md,
+      MarketSpace.sm,
+    ),
+    decoration: const BoxDecoration(
+      color: MarketColors.surface,
+      border: Border(top: BorderSide(color: MarketColors.divider)),
+    ),
+    child: SafeArea(top: false, child: child),
   );
 }
 
@@ -310,10 +527,13 @@ class AmountRow extends StatelessWidget {
   const AmountRow(this.label, this.value, {super.key, this.emphasized = false});
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    padding: const EdgeInsets.symmetric(
+      horizontal: MarketSpace.md,
+      vertical: MarketSpace.sm,
+    ),
     decoration: BoxDecoration(
-      color: emphasized ? const Color(0xffeaf3ed) : Colors.transparent,
-      borderRadius: BorderRadius.circular(16),
+      color: emphasized ? MarketColors.primarySurface : Colors.transparent,
+      borderRadius: BorderRadius.circular(MarketRadius.large),
     ),
     child: Wrap(
       alignment: WrapAlignment.spaceBetween,
@@ -332,7 +552,7 @@ class AmountRow extends StatelessWidget {
           style: TextStyle(
             fontSize: emphasized ? 20 : 15,
             fontWeight: FontWeight.w700,
-            color: const Color(0xff005931),
+            color: MarketColors.primary,
           ),
         ),
       ],
@@ -348,6 +568,6 @@ SliverGridDelegate productGrid(BuildContext context) =>
           ? 400
           : 240,
       mainAxisExtent: productCardHeight(context),
-      crossAxisSpacing: 4,
-      mainAxisSpacing: 8,
+      crossAxisSpacing: MarketSpace.sm,
+      mainAxisSpacing: MarketSpace.sm,
     );

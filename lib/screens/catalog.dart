@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../core/design.dart';
 import '../core/ui.dart';
 import 'address.dart';
 import 'auth.dart';
@@ -18,32 +19,35 @@ class StoreHome extends StatelessWidget {
     builder: (banners) => LayoutBuilder(
       builder: (context, box) => ListView(
         padding: EdgeInsets.symmetric(
-          horizontal: box.maxWidth > 1000 ? (box.maxWidth - 1000) / 2 + 16 : 12,
+          horizontal: box.maxWidth > 1000 ? (box.maxWidth - 1000) / 2 + 16 : 16,
           vertical: 16,
         ),
         key: const PageStorageKey('store-home'),
         children: [
           const HomeWelcome(),
           Card(
-            margin: const EdgeInsets.only(bottom: 20),
+            margin: const EdgeInsets.only(bottom: MarketSpace.xl),
             child: ListTile(
               contentPadding: const EdgeInsets.all(12),
               leading: Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xfff0fdf4),
-                  borderRadius: BorderRadius.circular(12),
+                  color: MarketColors.primarySurface,
+                  borderRadius: BorderRadius.circular(MarketRadius.medium),
                 ),
                 child: const Icon(
                   Icons.location_on_outlined,
-                  color: Color(0xff005931),
+                  color: MarketColors.primary,
                   size: 20,
                 ),
               ),
               title: const Text(
                 'التوصيل إلى',
-                style: TextStyle(fontSize: 12, color: Color(0xff6b7280)),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: MarketColors.textSecondary,
+                ),
               ),
               subtitle: Text(
                 '${market.address?['address'] ?? 'حدد عنوانك على الخريطة'}',
@@ -54,7 +58,7 @@ class StoreHome extends StatelessWidget {
               ),
               trailing: const Icon(
                 Icons.chevron_left,
-                color: Color(0xff005931),
+                color: MarketColors.primary,
               ),
               onTap: () => open(
                 context,
@@ -71,9 +75,9 @@ class StoreHome extends StatelessWidget {
                   : box.maxWidth >= 640
                   ? 240
                   : 176,
-              margin: const EdgeInsets.only(bottom: 28),
+              margin: const EdgeInsets.only(bottom: MarketSpace.xl),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(MarketRadius.extraLarge),
                 child: PageView(
                   children: banners
                       .map(
@@ -92,10 +96,11 @@ class StoreHome extends StatelessWidget {
             ),
           Container(
             padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.only(bottom: 28),
+            margin: const EdgeInsets.only(bottom: MarketSpace.xl),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
+              color: MarketColors.surface,
+              borderRadius: BorderRadius.circular(MarketRadius.large),
+              border: Border.all(color: MarketColors.divider),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -109,7 +114,7 @@ class StoreHome extends StatelessWidget {
                           Text(
                             'تسوق حسب القسم',
                             style: TextStyle(
-                              fontSize: 20,
+                              fontSize: 18,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -117,7 +122,7 @@ class StoreHome extends StatelessWidget {
                             'وصل للي محتاجه بسرعة',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Color(0xff6b7280),
+                              color: MarketColors.textSecondary,
                             ),
                           ),
                         ],
@@ -168,11 +173,11 @@ class StoreHome extends StatelessWidget {
           ),
           const Text(
             'مختارات المعداوي',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const Text(
             'منتجات مختارة عشان تسوقك يبقى أسهل',
-            style: TextStyle(fontSize: 12, color: Color(0xff6b7280)),
+            style: TextStyle(fontSize: 12, color: MarketColors.textSecondary),
           ),
           const SizedBox(height: 16),
           const CollectionsSection(),
@@ -224,9 +229,9 @@ class HomeCategory extends StatelessWidget {
               child: Container(
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
-                  color: const Color(0xfff0fdf4),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xffdcfce7)),
+                  color: MarketColors.surfaceSecondary,
+                  borderRadius: BorderRadius.circular(MarketRadius.large),
+                  border: Border.all(color: MarketColors.divider),
                 ),
                 child: '${category['image_url'] ?? ''}'.isEmpty
                     ? Center(
@@ -498,7 +503,7 @@ class _CatalogPageState extends State<CatalogPage> {
       children: [
         if (widget.search)
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(MarketSpace.md),
             child: TextField(
               controller: search,
               textInputAction: TextInputAction.search,
@@ -511,20 +516,22 @@ class _CatalogPageState extends State<CatalogPage> {
               },
               onSubmitted: applySearch,
               decoration: InputDecoration(
-                labelText: 'ابحث باسم المنتج',
+                hintText: 'دور على منتج أو قسم…',
+                fillColor: MarketColors.surfaceSecondary,
+                prefixIcon: const Icon(Icons.search_rounded),
                 suffixIcon: IconButton(
-                  tooltip: 'بحث',
+                  tooltip: 'تنفيذ البحث',
                   onPressed: () => setState(() {
                     term = search.text.trim();
                     revision++;
                   }),
-                  icon: const Icon(Icons.search),
+                  icon: const Icon(Icons.arrow_back_rounded),
                 ),
               ),
             ),
           ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: MarketSpace.md),
           child: DropdownButtonFormField<String>(
             decoration: const InputDecoration(
               prefixIcon: Icon(Icons.sort),
@@ -564,7 +571,7 @@ class _CatalogPageState extends State<CatalogPage> {
               }
               return GridView(
                 gridDelegate: productGrid(context),
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(MarketSpace.md),
                 children: products
                     .expand(
                       (p) => [
@@ -594,25 +601,62 @@ class ProductCard extends StatelessWidget {
       final line = market.cart
           .where((e) => e.key == CartLine(product, 1, bulk: bulk).key)
           .firstOrNull;
+      final originalPrice = bulk ? 0.0 : number(product.data['price']);
+      final offerPrice = bulk ? 0.0 : number(product.data['offer_price']);
+      final hasOffer = offerPrice > 0 && offerPrice < originalPrice;
+      final discount = hasOffer
+          ? ((originalPrice - offerPrice) / originalPrice * 100).round()
+          : 0;
       return Card(
         child: InkWell(
+          borderRadius: BorderRadius.circular(MarketRadius.large),
           onTap: () => open(context, ProductPage(product.id, bulk: bulk)),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(MarketSpace.sm),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xfff6f8f7),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: photo(product.picture(bulk)),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Padding(
+                            padding: const EdgeInsets.all(MarketSpace.xs),
+                            child: photo(product.picture(bulk)),
+                          ),
+                        ),
+                      ),
+                      if (hasOffer)
+                        PositionedDirectional(
+                          top: MarketSpace.xs,
+                          start: MarketSpace.xs,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: MarketSpace.xxs,
+                            ),
+                            decoration: BoxDecoration(
+                              color: MarketColors.discount,
+                              borderRadius: BorderRadius.circular(
+                                MarketRadius.small,
+                              ),
+                            ),
+                            child: Text(
+                              'خصم $discount٪',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: MarketSpace.xs),
                 Text(
                   product.title(bulk),
                   maxLines: 2,
@@ -628,84 +672,140 @@ class ProductCard extends StatelessWidget {
                       : product.weighted
                       ? 'السعر لكل كجم'
                       : 'بالقطعة',
-                  style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
-                ),
-                Text(
-                  money(product.unitPrice(bulk)),
                   style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Color(0xff005931),
+                    color: MarketColors.textSecondary,
+                    fontSize: 12,
                   ),
                 ),
-                const SizedBox(height: 8),
-                product.maxQuantity(bulk) <= 0
-                    ? const FilledButton(
-                        onPressed: null,
-                        child: Text('غير متاح حاليًا'),
-                      )
-                    : line != null
-                    ? Container(
-                        constraints: const BoxConstraints(minHeight: 48),
-                        decoration: BoxDecoration(
-                          color: const Color(0xfff0fdf4),
-                          borderRadius: BorderRadius.circular(12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        money(product.unitPrice(bulk)),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                          color: MarketColors.primary,
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            IconButton(
-                              tooltip: 'تقليل',
-                              icon: Icon(
-                                line.quantity <=
-                                        (product.weighted ? product.step : 1)
-                                    ? Icons.delete_outline
-                                    : Icons.remove,
-                                size: 18,
-                              ),
-                              onPressed: market.saving
-                                  ? null
-                                  : () => perform(
-                                      context,
-                                      () => market.changeCart(
-                                        product,
-                                        (line.quantity -
-                                                (product.weighted
-                                                    ? product.step
-                                                    : 1))
-                                            .clamp(0, line.quantity),
-                                        bulk: bulk,
-                                      ),
-                                    ),
+                      ),
+                    ),
+                    if (hasOffer) ...[
+                      const SizedBox(width: MarketSpace.xs),
+                      Flexible(
+                        child: Text(
+                          money(originalPrice),
+                          style: const TextStyle(
+                            color: MarketColors.textTertiary,
+                            fontSize: 11,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: MarketSpace.xs),
+                AnimatedSwitcher(
+                  duration: MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : const Duration(milliseconds: 200),
+                  switchInCurve: Curves.easeOut,
+                  switchOutCurve: Curves.easeOut,
+                  child: product.maxQuantity(bulk) <= 0
+                      ? const FilledButton(
+                          key: ValueKey('unavailable'),
+                          onPressed: null,
+                          child: Text('غير متاح حاليًا'),
+                        )
+                      : line != null
+                      ? Container(
+                          key: ValueKey('quantity'),
+                          constraints: const BoxConstraints(minHeight: 44),
+                          decoration: BoxDecoration(
+                            color: MarketColors.primarySurface,
+                            borderRadius: BorderRadius.circular(
+                              MarketRadius.medium,
                             ),
-                            Flexible(
-                              child: Text(
-                                product.weighted
-                                    ? '${line.quantity} جم'
-                                    : '${line.quantity}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              IconButton(
+                                tooltip: 'تقليل',
+                                icon: Icon(
+                                  line.quantity <=
+                                          (product.weighted ? product.step : 1)
+                                      ? Icons.delete_outline_rounded
+                                      : Icons.remove_rounded,
+                                  size: 18,
+                                ),
+                                onPressed: market.saving
+                                    ? null
+                                    : () => perform(
+                                        context,
+                                        () => market.changeCart(
+                                          product,
+                                          (line.quantity -
+                                                  (product.weighted
+                                                      ? product.step
+                                                      : 1))
+                                              .clamp(0, line.quantity),
+                                          bulk: bulk,
+                                        ),
+                                      ),
+                              ),
+                              Flexible(
+                                child: Text(
+                                  product.weighted
+                                      ? '${line.quantity} جم'
+                                      : '${line.quantity}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
+                              IconButton(
+                                tooltip: 'زيادة',
+                                icon: const Icon(Icons.add_rounded, size: 18),
+                                onPressed: market.saving
+                                    ? null
+                                    : () => perform(
+                                        context,
+                                        () => market.add(product, bulk: bulk),
+                                      ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : FilledButton.tonalIcon(
+                          key: const ValueKey('add'),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(44),
+                            backgroundColor: MarketColors.primaryLight,
+                            foregroundColor: MarketColors.primary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                MarketRadius.medium,
+                              ),
                             ),
-                            IconButton(
-                              tooltip: 'زيادة',
-                              icon: const Icon(Icons.add, size: 18),
-                              onPressed: market.saving
-                                  ? null
-                                  : () => perform(
-                                      context,
-                                      () => market.add(product, bulk: bulk),
-                                    ),
-                            ),
-                          ],
+                          ),
+                          onPressed: market.saving
+                              ? null
+                              : () => perform(context, () async {
+                                  await market.add(product, bulk: bulk);
+                                  if (context.mounted) {
+                                    message(context, 'اتضاف للسلة');
+                                  }
+                                }),
+                          icon: const Icon(
+                            Icons.add_shopping_cart_rounded,
+                            size: 18,
+                          ),
+                          label: const Text('إضافة للسلة'),
                         ),
-                      )
-                    : ActionButton('إضافة للسلة', () async {
-                        await market.add(product, bulk: bulk);
-                        if (context.mounted) message(context, 'اتضاف للسلة');
-                      }),
+                ),
               ],
             ),
           ),
@@ -774,9 +874,12 @@ class _ProductDetailsState extends State<ProductDetails> {
     final p = widget.product;
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(MarketSpace.lg),
       children: [
-        photo(p.picture(bulk), height: 250),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(MarketRadius.large),
+          child: photo(p.picture(bulk), height: 250),
+        ),
         heading(p.title(bulk)),
         Text('${p.data['description'] ?? ''}'),
         if (p.bulk)
@@ -793,38 +896,50 @@ class _ProductDetailsState extends State<ProductDetails> {
           ),
         Text(
           money(p.unitPrice(bulk)),
-          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: MarketColors.primary,
+          ),
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            IconButton(
-              tooltip: 'تقليل الكمية',
-              onPressed: quantity > (p.weighted ? p.step : 1)
-                  ? () => setState(() => quantity -= p.weighted ? p.step : 1)
-                  : null,
-              icon: const Icon(Icons.remove),
-            ),
-            Expanded(
-              child: Text(
-                '$quantity ${p.weighted
-                    ? 'جم'
-                    : bulk
-                    ? 'عبوة'
-                    : 'قطعة'}',
-                textAlign: TextAlign.center,
+        const SizedBox(height: MarketSpace.md),
+        Container(
+          decoration: BoxDecoration(
+            color: MarketColors.primarySurface,
+            borderRadius: BorderRadius.circular(MarketRadius.medium),
+          ),
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: 'تقليل الكمية',
+                onPressed: quantity > (p.weighted ? p.step : 1)
+                    ? () => setState(() => quantity -= p.weighted ? p.step : 1)
+                    : null,
+                icon: const Icon(Icons.remove_rounded),
               ),
-            ),
-            IconButton(
-              tooltip: 'زيادة الكمية',
-              onPressed:
-                  quantity + (p.weighted ? p.step : 1) <= p.maxQuantity(bulk)
-                  ? () => setState(() => quantity += p.weighted ? p.step : 1)
-                  : null,
-              icon: const Icon(Icons.add),
-            ),
-          ],
+              Expanded(
+                child: Text(
+                  '$quantity ${p.weighted
+                      ? 'جم'
+                      : bulk
+                      ? 'عبوة'
+                      : 'قطعة'}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              IconButton(
+                tooltip: 'زيادة الكمية',
+                onPressed:
+                    quantity + (p.weighted ? p.step : 1) <= p.maxQuantity(bulk)
+                    ? () => setState(() => quantity += p.weighted ? p.step : 1)
+                    : null,
+                icon: const Icon(Icons.add_rounded),
+              ),
+            ],
+          ),
         ),
+        const SizedBox(height: MarketSpace.sm),
         ActionButton(
           'أضف للسلة • ${money(CartLine(p, quantity, bulk: bulk).total)}',
           () async {
@@ -843,7 +958,22 @@ class _ProductDetailsState extends State<ProductDetails> {
               setState(() => favorite = !favorite);
             });
           },
-          icon: Icon(favorite ? Icons.favorite : Icons.favorite_outline),
+          icon: AnimatedSwitcher(
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 200),
+            transitionBuilder: (child, animation) =>
+                ScaleTransition(scale: animation, child: child),
+            child: Icon(
+              favorite
+                  ? Icons.favorite_rounded
+                  : Icons.favorite_outline_rounded,
+              key: ValueKey(favorite),
+              color: favorite
+                  ? MarketColors.discount
+                  : MarketColors.textSecondary,
+            ),
+          ),
           label: Text(favorite ? 'إزالة من المفضلة' : 'حفظ في المفضلة'),
         ),
         heading('منتجات مشابهة'),
@@ -984,7 +1114,10 @@ class CollectionsSection extends StatelessWidget {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(
+                            MarketRadius.large,
+                          ),
+                          border: Border.all(color: MarketColors.divider),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1001,7 +1134,7 @@ class CollectionsSection extends StatelessWidget {
                                 '${c['description']}',
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: Color(0xff6b7280),
+                                  color: MarketColors.textSecondary,
                                 ),
                               ),
                             const SizedBox(height: 16),
@@ -1044,35 +1177,25 @@ class HomeWelcome extends StatelessWidget {
     children: [
       Container(
         width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(24),
+        margin: const EdgeInsets.only(bottom: MarketSpace.md),
+        padding: const EdgeInsets.all(MarketSpace.xl),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          gradient: const LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [Color(0xff004d2c), Color(0xff08734a)],
-          ),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x18005931),
-              blurRadius: 20,
-              offset: Offset(0, 8),
-            ),
-          ],
+          color: MarketColors.primarySurface,
+          borderRadius: BorderRadius.circular(MarketRadius.extraLarge),
+          border: Border.all(color: MarketColors.primaryLight),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Row(
               children: [
-                Icon(Icons.eco_outlined, color: Color(0xffcfedaf), size: 18),
-                SizedBox(width: 8),
+                Icon(Icons.eco_rounded, color: MarketColors.primary, size: 18),
+                SizedBox(width: MarketSpace.xs),
                 Expanded(
                   child: Text(
-                    'المعداوي • كل يوم معاك',
+                    'المعداوي ماركت • مش مجرد ماركت',
                     style: TextStyle(
-                      color: Color(0xffd8eddf),
+                      color: MarketColors.primary,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1080,32 +1203,28 @@ class HomeWelcome extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: MarketSpace.sm),
             const Text(
               'طلبات البيت، ببساطة.',
               style: TextStyle(
-                fontSize: 26,
+                fontSize: 24,
                 height: 1.35,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                color: MarketColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: MarketSpace.xs),
             const Text(
               'اختار اللي ناقصك وسيب الباقي علينا',
-              style: TextStyle(fontSize: 13, color: Color(0xffd8eddf)),
+              style: TextStyle(fontSize: 14, color: MarketColors.textSecondary),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: MarketSpace.lg),
             FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xffd8efa9),
-                foregroundColor: const Color(0xff17472e),
-              ),
               onPressed: () => open(
                 context,
                 const CatalogPage(title: 'تسوق المنتجات', search: true),
               ),
-              icon: const Icon(Icons.arrow_back, size: 18),
+              icon: const Icon(Icons.arrow_back_rounded, size: 18),
               label: const Text('ابدأ تسوقك'),
             ),
           ],
@@ -1122,7 +1241,7 @@ class HomeWelcome extends StatelessWidget {
               const CatalogPage(title: 'عبوات وجملة', bulkOnly: true),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: MarketSpace.sm),
           Expanded(
             child: _shortcut(
               context,
@@ -1134,7 +1253,7 @@ class HomeWelcome extends StatelessWidget {
           ),
         ],
       ),
-      const SizedBox(height: 16),
+      const SizedBox(height: MarketSpace.md),
     ],
   );
   Widget _shortcut(
@@ -1144,17 +1263,29 @@ class HomeWelcome extends StatelessWidget {
     IconData icon,
     Widget page,
   ) => Material(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(20),
+    color: MarketColors.surface,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(MarketRadius.large),
+      side: const BorderSide(color: MarketColors.divider),
+    ),
     child: InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(MarketRadius.large),
       onTap: () => open(context, page),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(MarketSpace.sm),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xff005931), size: 22),
-            const SizedBox(width: 10),
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: MarketColors.primarySurface,
+                borderRadius: BorderRadius.circular(MarketRadius.medium),
+              ),
+              child: Icon(icon, color: MarketColors.primary, size: 21),
+            ),
+            const SizedBox(width: MarketSpace.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1162,15 +1293,15 @@ class HomeWelcome extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     subtitle,
                     style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xff728078),
+                      fontSize: 12,
+                      color: MarketColors.textSecondary,
                     ),
                   ),
                 ],

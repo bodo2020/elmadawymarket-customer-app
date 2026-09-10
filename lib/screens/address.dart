@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../core/design.dart';
 import '../core/ui.dart';
 
 class AddressPage extends StatefulWidget {
@@ -71,7 +72,7 @@ class _AddressPageState extends State<AddressPage> {
           ),
           const Text(
             'نطاق التوصيل بيتحسب بالطريق الفعلي من الفرع، مش بخط مستقيم.',
-            style: TextStyle(fontSize: 13, color: Color(0xff6b7280)),
+            style: TextStyle(fontSize: 13, color: MarketColors.textSecondary),
           ),
           const SizedBox(height: 20),
           SizedBox(
@@ -98,7 +99,7 @@ class _AddressPageState extends State<AddressPage> {
                           point: point!,
                           child: const Icon(
                             Icons.location_pin,
-                            color: Color(0xff005931),
+                            color: MarketColors.primary,
                             size: 44,
                           ),
                         ),
@@ -126,7 +127,7 @@ class _AddressPageState extends State<AddressPage> {
 
           const Text(
             'الخريطة بدأت من فرع المعداوي الأساسي. مش هنطلب صلاحية موقعك إلا لو ضغطت «استخدم موقعي».',
-            style: TextStyle(fontSize: 12, color: Color(0xff6b7280)),
+            style: TextStyle(fontSize: 12, color: MarketColors.textSecondary),
           ),
         ],
       ),
@@ -141,14 +142,15 @@ class _AddressPageState extends State<AddressPage> {
           ),
           const Text(
             'اكتب التفاصيل يدويًا حتى لو استخدمت الخريطة.',
-            style: TextStyle(fontSize: 13, color: Color(0xff6b7280)),
+            style: TextStyle(fontSize: 13, color: MarketColors.textSecondary),
           ),
           Container(
             margin: const EdgeInsets.symmetric(vertical: 20),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xfff0fdf4),
-              borderRadius: BorderRadius.circular(16),
+              color: MarketColors.primarySurface,
+              borderRadius: BorderRadius.circular(MarketRadius.large),
+              border: Border.all(color: MarketColors.primaryLight),
             ),
             child: const Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -156,7 +158,7 @@ class _AddressPageState extends State<AddressPage> {
                 Text(
                   'التحقق من التوصيل',
                   style: TextStyle(
-                    color: Color(0xff005931),
+                    color: MarketColors.primary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -196,7 +198,7 @@ class _AddressPageState extends State<AddressPage> {
           if (market.user == null)
             const Text(
               'هنحفظ العنوان على الجهاز مؤقتًا. تقدر تسجّل دخولك بعدين لإكمال الطلب وحفظه في حسابك.',
-              style: TextStyle(fontSize: 12, color: Color(0xff6b7280)),
+              style: TextStyle(fontSize: 12, color: MarketColors.textSecondary),
             ),
         ],
       ),
@@ -214,13 +216,13 @@ class _AddressPageState extends State<AddressPage> {
                 : 'عنوان التوصيل',
             style: TextStyle(
               fontSize: box.maxWidth > 768 ? 34 : 24,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 8),
           const Text(
             'حدد باب البيت على الخريطة، وبعدها اكتب التفاصيل اللي تساعد المندوب. مش لازم تسمح بالموقع — الخريطة بتبدأ من فرع المعداوي الأساسي.',
-            style: TextStyle(color: Color(0xff6b7280)),
+            style: TextStyle(color: MarketColors.textSecondary),
           ),
           const SizedBox(height: 24),
           if (box.maxWidth >= 850)

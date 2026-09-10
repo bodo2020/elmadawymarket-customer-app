@@ -82,30 +82,39 @@ class _HomeShellState extends State<HomeShell> {
     builder: (context, _) => Scaffold(
       appBar: AppBar(
         leading: Padding(
-          padding: const EdgeInsets.all(7),
+          padding: const EdgeInsets.all(6),
           child: Image.asset('assets/logo.png'),
         ),
         title: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(MarketRadius.large),
           onTap: () =>
               open(context, const CatalogPage(title: 'البحث', search: true)),
           child: Container(
-            height: 44,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            height: 52,
+            padding: const EdgeInsets.symmetric(horizontal: MarketSpace.md),
             decoration: BoxDecoration(
-              color: const Color(0xfff3f4f6),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: brandBorder),
+              color: MarketColors.surfaceSecondary,
+              borderRadius: BorderRadius.circular(MarketRadius.large),
+              border: Border.all(color: MarketColors.border),
             ),
             child: const Row(
               children: [
-                Icon(Icons.search, size: 20),
-                SizedBox(width: 8),
+                Icon(
+                  Icons.search_rounded,
+                  size: 21,
+                  color: MarketColors.textSecondary,
+                ),
+                SizedBox(width: MarketSpace.sm),
                 Expanded(
                   child: Text(
                     'دور على منتج أو قسم…',
-                    style: TextStyle(fontSize: 13, color: Color(0xff6b7280)),
+                    style: TextStyle(fontSize: 13, color: Color(0xff7b817c)),
                   ),
+                ),
+                Icon(
+                  Icons.qr_code_scanner_rounded,
+                  size: 21,
+                  color: MarketColors.primary,
                 ),
               ],
             ),
@@ -129,14 +138,37 @@ class _HomeShellState extends State<HomeShell> {
               : Column(
                   children: [
                     if (market.error != null)
-                      MaterialBanner(
-                        content: Text(market.error!),
-                        actions: [
-                          TextButton(
-                            onPressed: market.load,
-                            child: const Text('إعادة المحاولة'),
+                      Container(
+                        margin: const EdgeInsets.fromLTRB(
+                          MarketSpace.md,
+                          MarketSpace.xs,
+                          MarketSpace.md,
+                          0,
+                        ),
+                        padding: const EdgeInsets.all(MarketSpace.sm),
+                        decoration: BoxDecoration(
+                          color: MarketColors.errorSurface,
+                          borderRadius: BorderRadius.circular(
+                            MarketRadius.medium,
                           ),
-                        ],
+                          border: Border.all(
+                            color: MarketColors.error.withValues(alpha: .18),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              color: MarketColors.error,
+                            ),
+                            const SizedBox(width: MarketSpace.sm),
+                            Expanded(child: Text(market.error!)),
+                            TextButton(
+                              onPressed: market.load,
+                              child: const Text('إعادة المحاولة'),
+                            ),
+                          ],
+                        ),
                       ),
                     Expanded(
                       child: market.runtime == null && index < 2
@@ -153,82 +185,58 @@ class _HomeShellState extends State<HomeShell> {
         ),
       ),
       bottomNavigationBar: SafeArea(
-        child: Container(
-          height: 68 + (MediaQuery.textScalerOf(context).scale(11) - 11) * 6,
-          margin: const EdgeInsets.fromLTRB(12, 4, 12, 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: brandBorder),
-            boxShadow: const [
+        top: false,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: MarketColors.surface,
+            border: Border(top: BorderSide(color: MarketColors.divider)),
+            boxShadow: [
               BoxShadow(
-                color: Color(0x1400321c),
-                blurRadius: 35,
-                offset: Offset(0, 10),
+                color: Color(0x0a000000),
+                blurRadius: 12,
+                offset: Offset(0, -2),
               ),
             ],
           ),
-          child: Row(
-            children: List.generate(4, (i) {
-              final selected = index == i;
-              final icons = [
-                Icons.home_outlined,
-                Icons.grid_view,
-                Icons.shopping_cart_outlined,
-                Icons.person_outline,
-              ];
-              final labels = ['الرئيسية', 'الأقسام', 'السلة', 'الحساب'];
-              return Expanded(
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () => setState(() => index = i),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AnimatedContainer(
-                        duration: MediaQuery.disableAnimationsOf(context)
-                            ? Duration.zero
-                            : const Duration(milliseconds: 220),
-                        curve: Curves.easeOutCubic,
-                        width: selected ? 56 : 44,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: selected ? brandTint : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Badge(
-                          isLabelVisible: i == 2 && market.cart.isNotEmpty,
-                          backgroundColor: brandGreen,
-                          label: Text('${market.cart.length}'),
-                          child: Icon(
-                            icons[i],
-                            size: 21,
-                            color: selected
-                                ? brandGreen
-                                : const Color(0xff6b7280),
-                          ),
-                        ),
-                      ),
-                      Text(
-                        labels[i],
-                        maxLines: 2,
-                        textAlign: TextAlign.center,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: selected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: selected
-                              ? brandGreen
-                              : const Color(0xff6b7280),
-                        ),
-                      ),
-                    ],
-                  ),
+          child: NavigationBar(
+            height: 72 + (MediaQuery.textScalerOf(context).scale(12) - 12) * 4,
+            selectedIndex: index,
+            onDestinationSelected: (value) => setState(() => index = value),
+            animationDuration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 220),
+            destinations: [
+              const NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home_rounded),
+                label: 'الرئيسية',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.grid_view_outlined),
+                selectedIcon: Icon(Icons.grid_view_rounded),
+                label: 'الأقسام',
+              ),
+              NavigationDestination(
+                icon: Badge(
+                  isLabelVisible: market.cart.isNotEmpty,
+                  backgroundColor: MarketColors.discount,
+                  label: Text('${market.cart.length}'),
+                  child: const Icon(Icons.shopping_cart_outlined),
                 ),
-              );
-            }),
+                selectedIcon: Badge(
+                  isLabelVisible: market.cart.isNotEmpty,
+                  backgroundColor: MarketColors.discount,
+                  label: Text('${market.cart.length}'),
+                  child: const Icon(Icons.shopping_cart_rounded),
+                ),
+                label: 'السلة',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.person_outline_rounded),
+                selectedIcon: Icon(Icons.person_rounded),
+                label: 'حسابي',
+              ),
+            ],
           ),
         ),
       ),

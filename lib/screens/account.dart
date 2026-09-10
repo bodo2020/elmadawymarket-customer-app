@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:barcode_widget/barcode_widget.dart';
+import '../core/design.dart';
 import '../core/ui.dart';
 import 'auth.dart';
 import 'address.dart';
@@ -13,7 +14,7 @@ class AccountPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => market.user == null
       ? ListView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(MarketSpace.xl),
           children: [
             heading('حسابك في المعداوي'),
             const Text(
@@ -28,25 +29,24 @@ class AccountPage extends StatelessWidget {
         )
       : ListView(
           key: const PageStorageKey('account'),
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(MarketSpace.md),
           children: [
             Container(
-              padding: const EdgeInsets.all(22),
-              margin: const EdgeInsets.only(bottom: 20),
+              padding: const EdgeInsets.all(MarketSpace.lg),
+              margin: const EdgeInsets.only(bottom: MarketSpace.sm),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(26),
-                gradient: const LinearGradient(
-                  colors: [Color(0xff005931), Color(0xff12805a)],
-                ),
+                color: MarketColors.primarySurface,
+                borderRadius: BorderRadius.circular(MarketRadius.extraLarge),
+                border: Border.all(color: MarketColors.primaryLight),
               ),
               child: Row(
                 children: [
                   const CircleAvatar(
                     radius: 28,
-                    backgroundColor: Color(0xffd8efa9),
+                    backgroundColor: MarketColors.primaryLight,
                     child: Icon(
-                      Icons.person_outline,
-                      color: Color(0xff005931),
+                      Icons.person_outline_rounded,
+                      color: MarketColors.primary,
                       size: 30,
                     ),
                   ),
@@ -59,22 +59,22 @@ class AccountPage extends StatelessWidget {
                           'أهلًا بيك في المعداوي',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xffd8eddf),
+                            color: MarketColors.textSecondary,
                           ),
                         ),
                         Text(
                           '${market.profile?['name'] ?? 'حسابك'}',
                           style: const TextStyle(
-                            fontSize: 21,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                            color: MarketColors.textPrimary,
                           ),
                         ),
                         Text(
                           market.user!.phone ?? market.user!.email ?? '',
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Color(0xffd8eddf),
+                            color: MarketColors.textSecondary,
                           ),
                         ),
                       ],
@@ -85,6 +85,10 @@ class AccountPage extends StatelessWidget {
             ),
             if ('${market.profile?['name'] ?? ''}'.trim().isEmpty)
               const Text('كمّل اسمك علشان تقدر تؤكد الطلب'),
+            const SectionHeader(
+              'إدارة حسابك',
+              subtitle: 'طلباتك، عناوينك ومزايا العضوية في مكان واحد',
+            ),
             AccountLink(
               leading: const Icon(Icons.person_outline),
               title: const Text('بيانات الحساب وكلمة المرور'),
@@ -120,10 +124,16 @@ class AccountPage extends StatelessWidget {
               title: const Text('الإشعارات'),
               onTap: () => open(context, const NotificationsPage()),
             ),
-            ActionButton('تسجيل الخروج', () async {
-              await market.db.auth.signOut();
-              await market.load();
-            }),
+            const SizedBox(height: MarketSpace.sm),
+            ActionButton(
+              'تسجيل الخروج',
+              () async {
+                await market.db.auth.signOut();
+                await market.load();
+              },
+              icon: Icons.logout_rounded,
+              danger: true,
+            ),
           ],
         );
 }
@@ -403,7 +413,9 @@ class OrderTimeline extends StatelessWidget {
               dense: true,
               leading: Icon(
                 i <= current ? Icons.check_circle : Icons.circle_outlined,
-                color: i <= current ? Colors.green : Colors.grey,
+                color: i <= current
+                    ? MarketColors.success
+                    : MarketColors.textTertiary,
               ),
               title: Text(statusLabels[stages[i]]!),
               subtitle: Text(
@@ -647,22 +659,30 @@ class AccountLink extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.only(bottom: 8),
+    margin: const EdgeInsets.only(bottom: MarketSpace.xs),
     child: Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
+      color: MarketColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(MarketRadius.large),
+        side: const BorderSide(color: MarketColors.divider),
+      ),
       child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(MarketRadius.large),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: MarketSpace.md,
+          vertical: MarketSpace.xxs,
+        ),
         leading: Container(
-          width: 38,
-          height: 38,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
-            color: const Color(0xffedf5ef),
-            borderRadius: BorderRadius.circular(12),
+            color: MarketColors.primarySurface,
+            borderRadius: BorderRadius.circular(MarketRadius.medium),
           ),
           child: IconTheme(
-            data: const IconThemeData(size: 20, color: Color(0xff005931)),
+            data: const IconThemeData(size: 20, color: MarketColors.primary),
             child: leading,
           ),
         ),
@@ -673,7 +693,7 @@ class AccountLink extends StatelessWidget {
         trailing: const Icon(
           Icons.chevron_left,
           size: 18,
-          color: Color(0xff8b9990),
+          color: MarketColors.textTertiary,
         ),
         onTap: onTap,
       ),

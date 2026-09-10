@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/design.dart';
 import '../core/ui.dart';
 
 class AuthPage extends StatefulWidget {
@@ -94,32 +95,35 @@ class _AuthPageState extends State<AuthPage> {
   Widget build(BuildContext context) => PageFrame(
     'أهلًا بيك في المعداوي',
     SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
+      padding: const EdgeInsets.symmetric(
+        horizontal: MarketSpace.md,
+        vertical: MarketSpace.xl,
+      ),
       child: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 520),
-          padding: const EdgeInsets.all(22),
+          padding: const EdgeInsets.all(MarketSpace.lg),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: const Border(
-              top: BorderSide(color: Color(0xff005931), width: 5),
-            ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x10003c21),
-                blurRadius: 48,
-                offset: Offset(0, 16),
-              ),
-            ],
+            color: MarketColors.surface,
+            borderRadius: BorderRadius.circular(MarketRadius.extraLarge),
+            border: Border.all(color: MarketColors.divider),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Image.asset('assets/logo.png', height: 64),
+              const SizedBox(height: MarketSpace.sm),
+              Text(
+                'مش مجرد ماركت',
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: MarketColors.primary),
+              ),
               heading('كل احتياجات بيتك في مكان واحد'),
               Wrap(
-                spacing: 8,
+                spacing: MarketSpace.xs,
+                runSpacing: MarketSpace.xs,
                 children: [
                   ChoiceChip(
                     label: const Text('رمز الموبايل'),
@@ -141,7 +145,7 @@ class _AuthPageState extends State<AuthPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: MarketSpace.lg),
               TextField(
                 controller: identifier,
                 textDirection: TextDirection.ltr,
@@ -151,13 +155,13 @@ class _AuthPageState extends State<AuthPage> {
                       : 'الموبايل أو البريد الإلكتروني',
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: MarketSpace.md),
               if (mode == 'register')
                 TextField(
                   controller: name,
                   decoration: const InputDecoration(labelText: 'الاسم بالكامل'),
                 ),
-              if (mode == 'register') const SizedBox(height: 16),
+              if (mode == 'register') const SizedBox(height: MarketSpace.md),
               if (mode == 'login' || mode == 'register')
                 TextField(
                   controller: password,
@@ -171,7 +175,7 @@ class _AuthPageState extends State<AuthPage> {
                   maxLength: 6,
                   decoration: const InputDecoration(labelText: 'رمز التحقق'),
                 ),
-              const SizedBox(height: 20),
+              const SizedBox(height: MarketSpace.lg),
               ActionButton(
                 mode == 'otp' && !sent
                     ? 'إرسال رمز التحقق'

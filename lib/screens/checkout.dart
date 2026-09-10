@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/design.dart';
 import '../core/ui.dart';
 import 'address.dart';
 import 'auth.dart';
@@ -22,14 +23,17 @@ class CartPage extends StatelessWidget {
         : ListView(
             key: const PageStorageKey('cart'),
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(MarketSpace.md),
             children: [
               heading('سلة مشترياتك'),
               const Text(
                 'راجع الكميات وبعدها كمّل لتفاصيل التوصيل والدفع.',
-                style: TextStyle(color: Color(0xff63736a), fontSize: 13),
+                style: TextStyle(
+                  color: MarketColors.textSecondary,
+                  fontSize: 13,
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: MarketSpace.sm),
               if (market.saving) const LinearProgressIndicator(),
               ...market.cart.map(
                 (line) => panel(
@@ -114,10 +118,13 @@ class CartPage extends StatelessWidget {
               ),
               const Text(
                 'تكلفة التوصيل والخصم يتأكدوا في الخطوة التالية.',
-                style: TextStyle(color: Color(0xff63736a), fontSize: 13),
+                style: TextStyle(
+                  color: MarketColors.textSecondary,
+                  fontSize: 13,
+                ),
               ),
               const CartQuotePanel(),
-              const SizedBox(height: 16),
+              const SizedBox(height: MarketSpace.md),
               ActionButton('متابعة لمراجعة الطلب ←', () async {
                 if (market.user == null) {
                   await open(context, const AuthPage());
@@ -245,7 +252,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     loading
         ? const LoadingSurface()
         : ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(MarketSpace.lg),
             children: [
               if (error != null)
                 panel(
@@ -365,27 +372,52 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         }),
                       );
                       if (!context.mounted) return;
-                      final selected = await showDialog<JsonMap>(
+                      final selected = await showModalBottomSheet<JsonMap>(
                         context: context,
-                        builder: (c) => SimpleDialog(
-                          title: const Text('اختار قسيمة'),
-                          children: vouchers.isEmpty
-                              ? [
+                        isScrollControlled: true,
+                        builder: (c) => SafeArea(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                              MarketSpace.lg,
+                              MarketSpace.xs,
+                              MarketSpace.lg,
+                              MarketSpace.lg,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  'اختار قسيمة',
+                                  style: Theme.of(c).textTheme.headlineSmall,
+                                ),
+                                const SizedBox(height: MarketSpace.sm),
+                                if (vouchers.isEmpty)
                                   const Padding(
-                                    padding: EdgeInsets.all(20),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: MarketSpace.xl,
+                                    ),
                                     child: Text('مفيش قسائم متاحة'),
-                                  ),
-                                ]
-                              : vouchers
-                                    .map(
-                                      (v) => SimpleDialogOption(
-                                        onPressed: () => Navigator.pop(c, v),
-                                        child: Text(
-                                          '${v['voucher_code']} • ${money(v['remaining_value_egp'])}',
-                                        ),
+                                  )
+                                else
+                                  ...vouchers.map(
+                                    (v) => ListTile(
+                                      leading: const Icon(
+                                        Icons.confirmation_number_outlined,
                                       ),
-                                    )
-                                    .toList(),
+                                      title: Text('${v['voucher_code']}'),
+                                      subtitle: Text(
+                                        money(v['remaining_value_egp']),
+                                      ),
+                                      trailing: const Icon(
+                                        Icons.chevron_left_rounded,
+                                      ),
+                                      onTap: () => Navigator.pop(c, v),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
                         ),
                       );
                       if (selected != null && mounted) {
@@ -416,19 +448,27 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 20),
+                const SizedBox(height: MarketSpace.lg),
                 const Text(
                   'راجع عنوانك وطريقة الدفع قبل التأكيد.',
-                  style: TextStyle(fontSize: 13, color: Color(0xff63736a)),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: MarketColors.textSecondary,
+                  ),
                 ),
-                const SizedBox(height: 12),
-                ActionButton(
-                  market.pending == null ? 'تأكيد الطلب' : 'إعادة نفس المحاولة',
-                  submit,
-                ),
+                const SizedBox(height: 92),
               ],
             ],
           ),
+    bottom: !loading && quote != null
+        ? StickyBottomCTA(
+            child: ActionButton(
+              market.pending == null ? 'تأكيد الطلب' : 'إعادة نفس المحاولة',
+              submit,
+              icon: Icons.check_circle_outline_rounded,
+            ),
+          )
+        : null,
   );
 }
 
@@ -446,9 +486,13 @@ class ReceiptPage extends StatelessWidget {
           .eq('customer_id', market.profile!['id'])
           .single(),
       builder: (order) => ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(MarketSpace.lg),
         children: [
-          const Icon(Icons.check_circle_outline, color: Colors.green, size: 72),
+          const Icon(
+            Icons.check_circle_rounded,
+            color: MarketColors.success,
+            size: 72,
+          ),
           heading('طلبك اتسجل'),
           Text('رقم الطلب: ${order['tracking_number'] ?? id}'),
           Text('الإجمالي: ${money(order['total'])}'),
