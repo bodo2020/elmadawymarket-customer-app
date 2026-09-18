@@ -93,15 +93,7 @@ class MarketStore extends ChangeNotifier {
             .from('cart_items')
             .select()
             .eq('customer_id', p['id']);
-        final ids = saved.map((e) => e['product_id']).toSet().toList();
-        final products = ids.isEmpty
-            ? <JsonMap>[]
-            : rows(
-                await rpc('get_customer_branch_products_by_ids', {
-                  'p_branch_id': r['delivery_branch_id'],
-                  'p_product_ids': ids,
-                }),
-              );
+        final products = await _restoreCartProducts(saved, r);
         for (final item in saved) {
           final matches = products.where((e) => e['id'] == item['product_id']);
           if (matches.isNotEmpty) {
@@ -129,16 +121,25 @@ class MarketStore extends ChangeNotifier {
         next = merged.values.toList();
       }
       if (r != null && next.isNotEmpty) {
-        final products = rows(
-          await rpc('get_customer_branch_products_by_ids', {
-            'p_branch_id': r['delivery_branch_id'],
-            'p_product_ids': next.map((e) => e.product.id).toSet().toList(),
-          }),
-        );
+        final persistedShape = next
+            .map(
+              (line) => {
+                'product_id': line.product.id,
+                'metadata': line.persistence()['metadata'],
+              },
+            )
+            .toList();
+        final products = (await _restoreCartProducts(persistedShape, r))
+            .map(Product.new)
+            .toList();
         next = next.expand((line) {
-          final found = products.where((e) => e['id'] == line.product.id);
+          final found = products.where(
+            (product) =>
+                product.id == line.product.id &&
+                product.sourceKey == line.product.sourceKey,
+          );
           if (found.isEmpty) return <CartLine>[];
-          final product = Product(found.first);
+          final product = found.first;
           final q = line.quantity.clamp(0, product.maxQuantity(line.bulk));
           if (q == 0 || (line.bulk && !product.bulk)) return <CartLine>[];
           return [CartLine(product, q, bulk: line.bulk)];
@@ -260,15 +261,127 @@ class MarketStore extends ChangeNotifier {
     await load();
   }
 
+  Future<List<JsonMap>> _restoreCartProducts(
+    Iterable<dynamic> items,
+    JsonMap branchRuntime,
+  ) async {
+    final values = items.map(row).toList();
+    final ownedIds = values
+        .where(
+          (item) =>
+              row(item['metadata'])['source_kind'] != 'marketplace' &&
+              item['product_id'] != null,
+        )
+        .map((item) => item['product_id'])
+        .toSet()
+        .toList();
+
+    final result = <JsonMap>[];
+    if (ownedIds.isNotEmpty) {
+      result.addAll(
+        rows(
+          await rpc('get_customer_branch_products_by_ids', {
+            'p_branch_id': branchRuntime['delivery_branch_id'],
+            'p_product_ids': ownedIds,
+          }),
+        ),
+      );
+    }
+
+    final marketplace = values.where(
+      (item) =>
+          row(item['metadata'])['source_kind'] == 'marketplace' &&
+          item['product_id'] != null &&
+          row(item['metadata'])['branch_id'] != null,
+    );
+
+    final restored = await Future.wait(
+      marketplace.map((item) async {
+        final metadata = row(item['metadata']);
+        return rows(
+          await rpc('get_customer_marketplace_store_catalog_v2', {
+            'p_branch_id': metadata['branch_id'],
+            'p_product_id': item['product_id'],
+            'p_search': null,
+            'p_limit': 1,
+          }),
+        );
+      }),
+    );
+    for (final rowsForItem in restored) {
+      result.addAll(rowsForItem);
+    }
+    return result;
+  }
+
   Future<List<Product>> catalog({JsonMap filters = const {}}) async {
-    if (runtime == null) throw StateError('ADDRESS_REQUIRED');
-    return rows(
+    if (runtime == null || address == null) {
+      throw StateError('ADDRESS_REQUIRED');
+    }
+
+    final owned = rows(
       await rpc('get_customer_branch_catalog', {
         'p_branch_id': runtime!['delivery_branch_id'],
         'p_limit': 1000,
         ...filters,
       }),
-    ).map(Product.new).toList();
+    );
+
+    final productId = '${filters['p_product_id'] ?? ''}'.trim();
+    final searchText = '${filters['p_search'] ?? ''}'.trim();
+    final barcode = '${filters['p_barcode'] ?? ''}'.trim();
+    final hasCategoryFilter =
+        filters['p_main_category_id'] != null ||
+        filters['p_subcategory_id'] != null ||
+        filters['p_company_id'] != null;
+
+    if (hasCategoryFilter && productId.isEmpty) {
+      return owned.map(Product.new).toList();
+    }
+
+    final stores = rows(
+      await rpc('get_customer_marketplace_stores_v1', {
+        'p_latitude': address!['latitude'],
+        'p_longitude': address!['longitude'],
+        'p_branch_id': null,
+        'p_limit': 50,
+      }),
+    );
+
+    final term = barcode.isNotEmpty ? barcode : searchText;
+    final marketplaceLists = await Future.wait(
+      stores.map((store) async {
+        return rows(
+          await rpc('get_customer_marketplace_store_catalog_v2', {
+            'p_branch_id': store['branch_id'],
+            'p_product_id': productId.isEmpty ? null : productId,
+            'p_search': term.isEmpty ? null : term,
+            'p_limit': productId.isEmpty ? 500 : 1,
+          }),
+        );
+      }),
+    );
+
+    final merged = <JsonMap>[...owned];
+    final seen = <String>{
+      for (final item in owned)
+        if ('${item['barcode'] ?? ''}'.trim().isNotEmpty)
+          'barcode:${item['barcode']}'
+        else
+          'id:${item['id']}',
+    };
+
+    for (final list in marketplaceLists) {
+      for (final item in list) {
+        final barcodeValue = '${item['barcode'] ?? ''}'.trim();
+        final key = barcodeValue.isNotEmpty
+            ? 'barcode:$barcodeValue'
+            : 'id:${item['id']}';
+        if (seen.add(key)) merged.add(item);
+      }
+    }
+
+    return merged.map(Product.new).toList();
   }
 
   Future<void> changeCart(
@@ -278,6 +391,16 @@ class MarketStore extends ChangeNotifier {
   }) async {
     if (pending != null) throw StateError('PENDING_CHECKOUT');
     if (!cartReady || saving) throw StateError('CART_NOT_READY');
+    if (
+      quantity > 0 &&
+      cart.isNotEmpty &&
+      cart.first.product.sourceKey != product.sourceKey
+    ) {
+      throw StateError('CART_SOURCE_MIXED');
+    }
+    if (product.marketplace && bulk) {
+      throw StateError('BULK_UNAVAILABLE');
+    }
     if (quantity < 0 || quantity > product.maxQuantity(bulk)) {
       throw StateError('INSUFFICIENT_STOCK');
     }
@@ -337,19 +460,71 @@ class MarketStore extends ChangeNotifier {
     }
   }
 
-  Future<JsonMap> quote(List<JsonMap> items, String addressId) async {
-    final q = row(
-      await rpc('quote_customer_order', {
-        'p_items': items,
-        'p_address_id': addressId,
+  bool get cartIsMarketplace =>
+      cart.isNotEmpty && cart.first.product.marketplace;
+
+  String? get cartMarketplaceBranchId => cartIsMarketplace
+      ? cart.first.product.marketplaceBranchId
+      : null;
+
+  Future<JsonMap> cartQuote() async {
+    if (address == null || cart.isEmpty) {
+      throw StateError('ADDRESS_REQUIRED');
+    }
+    if (cartIsMarketplace) {
+      final branchId = cartMarketplaceBranchId;
+      if (branchId == null) throw StateError('MARKETPLACE_STORE_UNAVAILABLE');
+      return row(
+        await rpc('quote_marketplace_cart_v1', {
+          'p_branch_id': branchId,
+          'p_items': checkoutLines(cart),
+          'p_latitude': address!['latitude'],
+          'p_longitude': address!['longitude'],
+        }),
+      );
+    }
+    return row(
+      await rpc('quote_customer_cart', {
+        'p_items': checkoutLines(cart),
+        'p_latitude': address!['latitude'],
+        'p_longitude': address!['longitude'],
       }),
     );
+  }
+
+  Future<JsonMap> quote(List<JsonMap> items, String addressId) async {
     final a = await db
         .from('customer_addresses')
         .select('latitude,longitude')
         .eq('id', addressId)
         .eq('user_id', user!.id)
         .single();
+
+    final pendingSource = '${pending?['source_kind'] ?? ''}';
+    final marketplace =
+        pendingSource == 'marketplace' ||
+        (pendingSource.isEmpty && cartIsMarketplace);
+
+    if (marketplace) {
+      final branchId =
+          '${pending?['p_branch_id'] ?? cartMarketplaceBranchId ?? ''}'.trim();
+      if (branchId.isEmpty) throw StateError('MARKETPLACE_STORE_UNAVAILABLE');
+      return row(
+        await rpc('quote_marketplace_cart_v1', {
+          'p_branch_id': branchId,
+          'p_items': items,
+          'p_latitude': a['latitude'],
+          'p_longitude': a['longitude'],
+        }),
+      );
+    }
+
+    final q = row(
+      await rpc('quote_customer_order', {
+        'p_items': items,
+        'p_address_id': addressId,
+      }),
+    );
     await road(
       '${q['branch_id']}',
       number(a['latitude']),
@@ -407,16 +582,37 @@ class MarketStore extends ChangeNotifier {
         if (user == null || address?['id'] == null) {
           throw StateError('ADDRESS_REQUIRED');
         }
-        payload = {
-          'p_request_id': const Uuid().v4(),
-          'p_items': checkoutLines(cart),
-          'p_address_id': address!['id'],
-          'p_payment_method': method,
-          'p_notes': notes,
-          'p_quote_token': q['quote_token'],
-          'p_voucher_code': voucher,
-          'p_voucher_amount': voucherAmount,
-        };
+        if (cartIsMarketplace) {
+          if (voucher != null && voucher.trim().isNotEmpty) {
+            throw StateError('MARKETPLACE_VOUCHER_UNAVAILABLE');
+          }
+          final branchId = cartMarketplaceBranchId;
+          if (branchId == null) {
+            throw StateError('MARKETPLACE_STORE_UNAVAILABLE');
+          }
+          payload = {
+            'source_kind': 'marketplace',
+            'p_request_id': const Uuid().v4(),
+            'p_branch_id': branchId,
+            'p_items': checkoutLines(cart),
+            'p_address_id': address!['id'],
+            'p_payment_method': method,
+            'p_notes': notes,
+            'p_quote_token': q['quote_token'],
+          };
+        } else {
+          payload = {
+            'source_kind': 'owned',
+            'p_request_id': const Uuid().v4(),
+            'p_items': checkoutLines(cart),
+            'p_address_id': address!['id'],
+            'p_payment_method': method,
+            'p_notes': notes,
+            'p_quote_token': q['quote_token'],
+            'p_voucher_code': voucher,
+            'p_voucher_amount': voucherAmount,
+          };
+        }
         await prefs.setString('checkout:$owner', jsonEncode(payload));
       }
       checkOwner();
@@ -436,8 +632,15 @@ class MarketStore extends ChangeNotifier {
       }
       await prefs.setBool('checkout-rejected:$owner', false);
       await prefs.setBool('checkout-dispatched:$owner', true);
+      final sourceKind = '${payload['source_kind'] ?? 'owned'}';
+      final dispatch = JsonMap.from(payload)..remove('source_kind');
       final result = row(
-        await rpc('place_customer_order_with_voucher', payload),
+        await rpc(
+          sourceKind == 'marketplace'
+              ? 'place_marketplace_order_v1'
+              : 'place_customer_order_with_voucher',
+          dispatch,
+        ),
       );
       checkOwner();
       await _placed();
