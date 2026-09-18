@@ -22,6 +22,28 @@ class Product {
   Product(this.data);
   String get id => '${data['id']}';
   String get name => '${data['name'] ?? ''}';
+  bool get marketplace =>
+      data['commerce_source'] == 'marketplace' ||
+      data['source_kind'] == 'marketplace';
+  String? get marketplaceBranchId {
+    final value = data['marketplace_branch_id'] ?? data['branch_id'];
+    final text = '${value ?? ''}'.trim();
+    return marketplace && text.isNotEmpty ? text : null;
+  }
+  String? get marketplaceListingId {
+    final value = data['marketplace_listing_id'] ?? data['listing_id'];
+    final text = '${value ?? ''}'.trim();
+    return marketplace && text.isNotEmpty ? text : null;
+  }
+  String? get merchantId {
+    final text = '${data['merchant_id'] ?? ''}'.trim();
+    return marketplace && text.isNotEmpty ? text : null;
+  }
+  String get merchantName => '${data['merchant_name'] ?? ''}'.trim();
+  String get branchName =>
+      '${data['marketplace_branch_name'] ?? data['branch_name'] ?? ''}'.trim();
+  String get sourceKey =>
+      marketplace ? 'marketplace:${marketplaceBranchId ?? ''}' : 'owned';
   bool get weighted =>
       data['barcode_type'] == 'scale' ||
       {
@@ -75,23 +97,37 @@ class CartLine {
   final int quantity;
   final bool bulk;
   CartLine(this.product, this.quantity, {this.bulk = false});
-  String get key => '${product.id}:$bulk:${product.weighted}';
+  String get key =>
+      '${product.sourceKey}:${product.id}:$bulk:${product.weighted}';
   double get total =>
       product.unitPrice(bulk) * quantity / (product.weighted ? 1000 : 1);
   String get amount =>
       product.weighted ? '$quantity جم' : '$quantity ${bulk ? 'عبوة' : 'قطعة'}';
-  JsonMap checkout() => {
-    'product_id': product.id,
-    'quantity': quantity,
-    'is_bulk': bulk,
-    'unit_of_measure': product.weighted ? 'weight' : 'piece',
-  };
+  JsonMap checkout() => product.marketplace
+      ? {
+          'listing_id': product.marketplaceListingId,
+          'quantity': quantity,
+          'is_bulk': false,
+          'unit_of_measure': product.weighted ? 'weight' : 'piece',
+        }
+      : {
+          'product_id': product.id,
+          'quantity': quantity,
+          'is_bulk': bulk,
+          'unit_of_measure': product.weighted ? 'weight' : 'piece',
+        };
   JsonMap persistence() => {
     'product_id': product.id,
     'quantity': quantity,
     'metadata': {
       'is_bulk': bulk,
       'unit_of_measure': product.weighted ? 'weight' : 'piece',
+      'source_kind': product.marketplace ? 'marketplace' : 'owned',
+      'merchant_id': product.merchantId,
+      'merchant_name': product.merchantName.isEmpty ? null : product.merchantName,
+      'branch_id': product.marketplaceBranchId,
+      'branch_name': product.branchName.isEmpty ? null : product.branchName,
+      'listing_id': product.marketplaceListingId,
     },
   };
   JsonMap toJson() => {
@@ -154,6 +190,10 @@ String friendlyError(Object error) {
     'CHECKOUT_NOT_READY': 'تأكيد الطلبات غير متاح حاليًا',
     'PRODUCT_UNAVAILABLE': 'منتج في السلة لم يعد متاحًا',
     'VOUCHER_UNAVAILABLE': 'القسيمة غير متاحة',
+    'MIXED_MERCHANT_CART': 'السلة لازم تكون من متجر واحد. فضّي السلة أو كمّل الطلب الحالي الأول',
+    'CART_SOURCE_MIXED': 'السلة فيها منتجات من متجر مختلف. كمّلها أو فضّيها قبل إضافة المنتج',
+    'MARKETPLACE_VOUCHER_UNAVAILABLE': 'قسائم الولاء غير متاحة لطلبات المتاجر الشريكة حاليًا',
+    'MARKETPLACE_STORE_UNAVAILABLE': 'المتجر غير متاح حاليًا',
     'Invalid login credentials': 'بيانات الدخول غير صحيحة',
     'SocketException': 'راجع اتصال الإنترنت وحاول تاني',
   };

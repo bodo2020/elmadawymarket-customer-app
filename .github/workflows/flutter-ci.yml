@@ -1,0 +1,74 @@
+name: Flutter CI
+
+permissions:
+  contents: write
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'work/**'
+
+jobs:
+  analyze-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Legacy UI tests (non-blocking)
+        continue-on-error: true
+        shell: bash
+        run: |
+          if [ -d test ] && find test -name '*_test.dart' -print -quit | grep -q .; then
+            flutter test
+          else
+            echo "No Flutter tests found; skipping flutter test."
+          fi
+
+      - name: Build web
+        run: flutter build web --release --dart-define=SUPABASE_ANON_KEY=dummy-ci-key
+
+  deploy-web:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: analyze-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build production web
+        run: >
+          flutter build web --release
+          --base-href /elmadawymarket-customer-app/
+          --dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6dnBheWphYWRibXBheWVnbG9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDUwMTMsImV4cCI6MjA2MDM4MTAxM30.ti7DYVtr4GdlzCeoUF8zD1lStDQfNuDj3mbsnYWP5H8
+
+      - name: Publish gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          publish_branch: gh-pages
+          force_orphan: true
