@@ -109,16 +109,26 @@ class MarketStore extends ChangeNotifier {
       }
       if (uid != null && prefs.getString('cart:guest') != null) {
         final guest = decodeCart(prefs.getString('cart:guest'));
-        final merged = {for (final e in next) e.key: e};
-        for (final e in guest) {
-          final old = merged[e.key];
-          merged[e.key] = CartLine(
-            e.product,
-            e.quantity + (old?.quantity ?? 0),
-            bulk: e.bulk,
-          );
+        final sourceConflict =
+            next.isNotEmpty &&
+            guest.isNotEmpty &&
+            next.first.product.sourceKey != guest.first.product.sourceKey;
+        if (sourceConflict) {
+          // Keep the cart the customer was actively building before sign-in.
+          // A checkout cannot mix Elmadawy-owned stock with a partner store.
+          next = guest;
+        } else {
+          final merged = {for (final e in next) e.key: e};
+          for (final e in guest) {
+            final old = merged[e.key];
+            merged[e.key] = CartLine(
+              e.product,
+              e.quantity + (old?.quantity ?? 0),
+              bulk: e.bulk,
+            );
+          }
+          next = merged.values.toList();
         }
-        next = merged.values.toList();
       }
       if (r != null && next.isNotEmpty) {
         final persistedShape = next
