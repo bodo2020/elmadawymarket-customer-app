@@ -47,7 +47,12 @@ class CartPage extends StatelessWidget {
                           width: 60,
                         ),
                         title: Text(line.product.title(line.bulk)),
-                        subtitle: Text('${line.amount} • ${money(line.total)}'),
+                        subtitle: Text(
+                          line.product.marketplace &&
+                                  line.product.merchantName.isNotEmpty
+                              ? '${line.amount} • ${money(line.total)} • ${line.product.merchantName}'
+                              : '${line.amount} • ${money(line.total)}',
+                        ),
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -217,7 +222,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Future<void> submit() async {
     if (quote == null) return;
     final parsed = double.tryParse(amount.text);
-    if (voucher.text.trim().isNotEmpty && (parsed == null || parsed <= 0)) {
+    final marketplace = quote?['source_kind'] == 'marketplace';
+    if (
+      !marketplace &&
+      voucher.text.trim().isNotEmpty &&
+      (parsed == null || parsed <= 0)
+    ) {
       message(context, 'اكتب قيمة القسيمة المطلوبة');
       return;
     }
@@ -301,6 +311,36 @@ class _CheckoutPageState extends State<CheckoutPage> {
               if (quote != null) ...[
                 heading('١. عنوانك ومنتجاتك'),
                 Text('${market.address?['address'] ?? ''}'),
+                if (quote!['source_kind'] == 'marketplace')
+                  panel(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'الطلب من متجر شريك',
+                          style: TextStyle(
+                            color: MarketColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          '${quote!['merchant_name'] ?? quote!['branch_name'] ?? ''}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
+                        if ('${quote!['pickup_address'] ?? ''}'.trim().isNotEmpty)
+                          Text(
+                            'استلام المندوب: ${quote!['pickup_address']}',
+                            style: const TextStyle(
+                              color: MarketColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 if (market.pending == null)
                   TextButton(
                     onPressed: () async {
@@ -330,7 +370,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       AmountRow('المنتجات', money(quote!['subtotal'])),
                       AmountRow('التوصيل', money(quote!['shipping_cost'])),
                       AmountRow(
-                        'الإجمالي قبل القسيمة',
+                        quote!['source_kind'] == 'marketplace'
+                            ? 'الإجمالي'
+                            : 'الإجمالي قبل القسيمة',
                         money(quote!['total']),
                         emphasized: true,
                       ),
@@ -363,90 +405,102 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       labelText: 'ملاحظات الطلب (اختياري)',
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () async {
-                      final vouchers = rows(
-                        await market.rpc('get_my_loyalty_vouchers', {
-                          'p_status': 'active',
-                        }),
-                      );
-                      if (!context.mounted) return;
-                      final selected = await showModalBottomSheet<JsonMap>(
-                        context: context,
-                        isScrollControlled: true,
-                        builder: (c) => SafeArea(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              MarketSpace.lg,
-                              MarketSpace.xs,
-                              MarketSpace.lg,
-                              MarketSpace.lg,
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Text(
-                                  'اختار قسيمة',
-                                  style: Theme.of(c).textTheme.headlineSmall,
-                                ),
-                                const SizedBox(height: MarketSpace.sm),
-                                if (vouchers.isEmpty)
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      vertical: MarketSpace.xl,
-                                    ),
-                                    child: Text('مفيش قسائم متاحة'),
-                                  )
-                                else
-                                  ...vouchers.map(
-                                    (v) => ListTile(
-                                      leading: const Icon(
-                                        Icons.confirmation_number_outlined,
-                                      ),
-                                      title: Text('${v['voucher_code']}'),
-                                      subtitle: Text(
-                                        money(v['remaining_value_egp']),
-                                      ),
-                                      trailing: const Icon(
-                                        Icons.chevron_left_rounded,
-                                      ),
-                                      onTap: () => Navigator.pop(c, v),
-                                    ),
+                  if (quote!['source_kind'] != 'marketplace') ...[
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () async {
+                        final vouchers = rows(
+                          await market.rpc('get_my_loyalty_vouchers', {
+                            'p_status': 'active',
+                          }),
+                        );
+                        if (!context.mounted) return;
+                        final selected = await showModalBottomSheet<JsonMap>(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (c) => SafeArea(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                MarketSpace.lg,
+                                MarketSpace.xs,
+                                MarketSpace.lg,
+                                MarketSpace.lg,
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    'اختار قسيمة',
+                                    style: Theme.of(c).textTheme.headlineSmall,
                                   ),
-                              ],
+                                  const SizedBox(height: MarketSpace.sm),
+                                  if (vouchers.isEmpty)
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: MarketSpace.xl,
+                                      ),
+                                      child: Text('مفيش قسائم متاحة'),
+                                    )
+                                  else
+                                    ...vouchers.map(
+                                      (v) => ListTile(
+                                        leading: const Icon(
+                                          Icons.confirmation_number_outlined,
+                                        ),
+                                        title: Text('${v['voucher_code']}'),
+                                        subtitle: Text(
+                                          money(v['remaining_value_egp']),
+                                        ),
+                                        trailing: const Icon(
+                                          Icons.chevron_left_rounded,
+                                        ),
+                                        onTap: () => Navigator.pop(c, v),
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                           ),
+                        );
+                        if (selected != null && mounted) {
+                          setState(() {
+                            voucher.text = '${selected['voucher_code']}';
+                            amount.text = number(selected['remaining_value_egp'])
+                                .clamp(0, number(quote!['total']))
+                                .toStringAsFixed(2);
+                          });
+                        }
+                      },
+                      child: const Text('اختار من قسائمي'),
+                    ),
+                    TextField(
+                      controller: voucher,
+                      decoration: const InputDecoration(
+                        labelText: 'كود قسيمة الولاء (اختياري)',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: amount,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'قيمة القسيمة المطلوب استخدامها',
+                      ),
+                    ),
+                  ] else
+                    const Padding(
+                      padding: EdgeInsets.only(top: 16),
+                      child: Text(
+                        'قسائم الولاء خاصة بطلبات ماركت المعداوي حاليًا، ولا تُطبق على المتاجر الشريكة.',
+                        style: TextStyle(
+                          color: MarketColors.textSecondary,
+                          fontSize: 12,
                         ),
-                      );
-                      if (selected != null && mounted) {
-                        setState(() {
-                          voucher.text = '${selected['voucher_code']}';
-                          amount.text = number(selected['remaining_value_egp'])
-                              .clamp(0, number(quote!['total']))
-                              .toStringAsFixed(2);
-                        });
-                      }
-                    },
-                    child: const Text('اختار من قسائمي'),
-                  ),
-                  TextField(
-                    controller: voucher,
-                    decoration: const InputDecoration(
-                      labelText: 'كود قسيمة الولاء (اختياري)',
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: amount,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'قيمة القسيمة المطلوب استخدامها',
-                    ),
-                  ),
                 ],
                 const SizedBox(height: MarketSpace.lg),
                 const Text(
@@ -528,13 +582,7 @@ class CartQuotePanel extends StatelessWidget {
       key: ValueKey(
         '${market.cart.map((e) => '${e.key}:${e.quantity}').join(',')}:${market.address?['latitude']}:${market.address?['longitude']}',
       ),
-      load: () async => row(
-        await market.rpc('quote_customer_cart', {
-          'p_items': checkoutLines(market.cart),
-          'p_latitude': market.address!['latitude'],
-          'p_longitude': market.address!['longitude'],
-        }),
-      ),
+      load: market.cartQuote,
       builder: (quote) => Column(
         children: [
           AmountRow('شامل التوصيل', money(quote['total']), emphasized: true),
